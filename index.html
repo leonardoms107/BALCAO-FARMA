@@ -7,7 +7,16 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Balcão Farmacêutico</title>
+<title>Balcão Farmacêutico: consulta de medicamentos, interações e receitas</title>
+<meta name="description" content="App gratuito para farmacêuticos e balconistas: posologia, contraindicações, interações medicamentosas, tipo e validade de receita (Portaria 344, antimicrobianos, GLP-1) e comparação de marcas e genéricos pela tabela CMED. Funciona sem internet.">
+<link rel="canonical" href="https://leonardoms107.github.io/BALCAO-FARMA/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Balcão Farmacêutico">
+<meta property="og:description" content="Consulta rápida de 285 princípios ativos, interações, receitas e preços CMED para drogarias.">
+<meta property="og:url" content="https://leonardoms107.github.io/BALCAO-FARMA/">
+<meta property="og:image" content="https://leonardoms107.github.io/BALCAO-FARMA/icons/icon-512.png">
+<meta property="og:locale" content="pt_BR">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Balcão Farmacêutico","url":"https://leonardoms107.github.io/BALCAO-FARMA/","applicationCategory":"MedicalApplication","operatingSystem":"Android, iOS, navegador","inLanguage":"pt-BR","description":"Consulta de medicamentos para drogarias: posologia, contraindicações, interações, tipo e validade de receita e preços da tabela CMED.","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"},"audience":{"@type":"MedicalAudience","audienceType":"Farmacêuticos e profissionais de drogaria"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -152,6 +161,11 @@ ol.steps{margin:8px 0 0;padding-left:20px;text-align:left;display:inline-block}
   <span class="cmedstat" id="cmedstat">Tabela CMED não carregada</span>
 </div></header>
 <main class="wrap" id="root"></main>
+<section class="wrap" id="sobre" style="padding:8px 18px 40px;color:var(--muted);font-size:14px;max-width:900px">
+<h2 style="font-size:18px;color:var(--ink);margin-bottom:6px">Sobre o Balcão Farmacêutico</h2>
+<p>Ferramenta gratuita de apoio à dispensação para farmacêuticos e equipes de drogaria. Reúne 285 princípios ativos com indicações, posologia usual, contraindicações e orientações de balcão; checagem de interações medicamentosas; regras de receita e validade (receita simples, antimicrobianos pela RDC 471/2021, agonistas de GLP-1, listas A, B e C da Portaria 344/98); e comparação de preços de referência, genéricos e similares pela tabela oficial da CMED/ANVISA. Pode ser instalado no celular e funciona sem internet.</p>
+<p>Conteúdo de apoio, resumido de bulas e normas sanitárias. Não substitui a bula vigente, a prescrição nem a avaliação do farmacêutico.</p>
+</section>
 
 <script>window.XLSX_LOCAL=1;
 if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capacitor){navigator.serviceWorker.register("sw.js").catch(function(){});}
