@@ -4,6 +4,10 @@ Aplicativo de consulta para drogarias: 285 princípios ativos com posologia, con
 
 O projeto usa o Capacitor 8: o mesmo app (pasta `www/`) roda dentro dos projetos nativos `android/` e `ios/`.
 
+## Usar como app pelo navegador (mais simples)
+
+Abra no Chrome do celular https://leonardoms107.github.io/BALCAO-FARMA/ e toque em ⋮ › Adicionar à tela inicial (no iPhone: Safari › Compartilhar › Adicionar à Tela de Início). Funciona sem internet depois do primeiro acesso.
+
 ## Baixar o APK pronto
 
 No celular Android, abra:
