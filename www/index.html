@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A6B5C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Balcão Farmacêutico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Ferramenta de balcão: lista à esquerda, ficha à direita; as cores das tarjas e notificações (vermelha, preta, amarela, azul, branca) são o código visual. */
+:root{
+  --bg:#ECEFEE; --panel:#FFFFFF; --ink:#13201D; --muted:#596662; --line:#D3DAD8; --soft:#F5F7F6;
+  --accent:#0A6B5C; --on-accent:#FFFFFF; --accent-soft:#DCEFEA;
+  --t-red:#C4122F; --t-black:#15171A; --t-yellow:#E3AE00; --t-blue:#1E58CF; --t-white:#FFFFFF; --t-mip:#7A8A86;
+  --ci:#8E0F25; --g:#C2410C; --m:#A16207; --ok:#1D7A46;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:6px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1312; --panel:#161D1B; --ink:#E6ECEA; --muted:#97A5A1; --line:#283330; --soft:#1B2422;
+  --accent:#3FBFA6; --on-accent:#05211B; --accent-soft:#12302A;
+  --t-black:#000000; --t-white:#E9ECEB; --t-mip:#8C9C98;
+  --ci:#FF6B83; --g:#FB8A4C; --m:#E5B53F; --ok:#5BC48A; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1312; --panel:#161D1B; --ink:#E6ECEA; --muted:#97A5A1; --line:#283330; --soft:#1B2422;
+  --accent:#3FBFA6; --on-accent:#05211B; --accent-soft:#12302A;
+  --t-black:#000000; --t-white:#E9ECEB; --t-mip:#8C9C98;
+  --ci:#FF6B83; --g:#FB8A4C; --m:#E5B53F; --ok:#5BC48A; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+.wrap{max-width:1280px;margin:0 auto;padding:0 18px}
+header.top{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;padding-top:env(safe-area-inset-top,0px)}
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
+.top .wrap{display:flex;align-items:center;gap:18px;min-height:56px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:20px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
+.brand i{display:inline-block;width:20px;height:20px;border-radius:4px;background:var(--accent);position:relative}
+.brand i::before,.brand i::after{content:"";position:absolute;background:var(--on-accent);left:50%;top:50%;transform:translate(-50%,-50%)}
+.brand i::before{width:12px;height:4px}.brand i::after{width:4px;height:12px}
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap}
+nav.tabs a{padding:8px 12px;border-radius:var(--r);text-decoration:none;color:var(--muted);font-weight:500}
+nav.tabs a:hover{background:var(--soft);color:var(--ink)}
+nav.tabs a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.cmedstat{margin-left:auto;font-size:13px;color:var(--muted)}
+main{padding:18px 0 50px}
+
+.search{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);font-size:16px}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.listbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list{max-height:calc(100vh - 210px);overflow:auto}
+.item{display:grid;grid-template-columns:6px 1fr;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:9px 12px 9px 0;cursor:pointer}
+.item:hover{background:var(--soft)}
+.item[aria-selected="true"]{background:var(--accent-soft)}
+.item b{display:block;font-weight:600}
+.item small{color:var(--muted);font-size:12.5px}
+.stripe{border-radius:0 3px 3px 0}
+.s-mip{background:var(--t-mip)} .s-tv{background:var(--t-red)} .s-b{background:var(--t-blue)} .s-a{background:var(--t-yellow)} .s-c{background:var(--t-white);box-shadow:inset 0 0 0 1px var(--muted)}
+.s-preta{background:var(--t-black)}
+.count{font-size:12.5px;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.dhead{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+.dhead h2{font-size:28px;font-weight:700}
+.cls{color:var(--muted);margin-top:2px}
+.brands{font-size:14px;margin-top:6px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r);font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--soft)}
+.badge .sw{width:14px;height:14px;border-radius:3px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 26px}
+.sec h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.sec p{margin:0;max-width:70ch}
+.sec.full{grid-column:1/-1}
+.alert{border-left:3px solid var(--g);padding:8px 12px;background:var(--soft);border-radius:0 var(--r) var(--r) 0}
+.rec{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rec div{background:var(--panel);padding:10px 12px}
+.rec span{display:block;font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.sev{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+.sev.ci{background:var(--ci)} .sev.g{background:var(--g)} .sev.m{background:var(--m)}
+.ia{display:grid;gap:8px}
+.ia .row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--soft)}
+.ia .row p{margin:2px 0 0;font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-weight:600;cursor:pointer;text-decoration:none;font-size:14px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.note{font-size:13px;color:var(--muted)}
+.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--soft);position:sticky;top:0}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tw table{min-width:640px}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:var(--r);max-height:70vh;background:var(--panel)}
+.tp{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.tp.ref{border-color:var(--accent);color:var(--accent)} .tp.gen{background:var(--accent-soft)} .tp.sim{border-color:var(--muted)}
+.best td{background:var(--accent-soft)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.toolbar select,.toolbar input{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+.drop{border:2px dashed var(--line);border-radius:var(--r);padding:26px;text-align:center;background:var(--panel)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+ol.steps{margin:8px 0 0;padding-left:20px;text-align:left;display:inline-block}
+.disc{font-size:12.5px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+.cards2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.rcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rcard .bar{height:8px}
+.rcard .in{padding:14px 16px;display:grid;gap:6px;font-size:14px}
+.rcard .in b{font-family:var(--display);font-size:17px}
+.rcard dl{margin:0;display:grid;grid-template-columns:110px 1fr;gap:4px 10px}
+.rcard dt{color:var(--muted);font-size:12.5px}
+.rcard dd{margin:0}
+.calc{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.calc label{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.calc select,.calc input{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+.result{font-size:17px;font-weight:600;margin-top:12px}
+.picked{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.picked span{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);border-radius:999px;padding:4px 6px 4px 12px;font-weight:500}
+.picked button{border:0;background:var(--panel);border-radius:999px;width:22px;height:22px;cursor:pointer;line-height:1}
+.sugg{position:relative}
+.sugg ul{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);z-index:4;max-height:300px;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.sugg li button{width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:4px;cursor:pointer}
+.sugg li button:hover,.sugg li button:focus{background:var(--soft)}
+.layout>*,.grid>*,.rec>*{min-width:0}
+.dhead h2{overflow-wrap:anywhere}
+@media (max-width:700px){.top .wrap{gap:6px 12px;padding-top:6px}nav.tabs{flex-wrap:nowrap;overflow-x:auto;width:100%;order:3;scrollbar-width:none}nav.tabs a{white-space:nowrap}.cmedstat{font-size:12px}.card{padding:16px}.dhead h2{font-size:24px}}
+@media (max-width:900px){.layout{grid-template-columns:1fr}.list{max-height:320px}.grid,.rec{grid-template-columns:1fr}}
+@media (max-width:600px){.rec{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#consulta"><i aria-hidden="true"></i>Balcão Farmacêutico</a>
+  <nav class="tabs" id="tabs">
+    <a href="#consulta">Consulta</a>
+    <a href="#interacoes">Interações</a>
+    <a href="#precos">Marcas e preços</a>
+    <a href="#receitas">Receitas e validade</a>
+  </nav>
+  <span class="cmedstat" id="cmedstat">Tabela CMED não carregada</span>
+</div></header>
+<main class="wrap" id="root"></main>
+
+<script>window.XLSX_LOCAL=1;
+if("serviceWorker" in navigator && location.protocol==="https:" && !window.Capacitor){navigator.serviceWorker.register("sw.js").catch(function(){});}
+</script>
+<script>
+/* Base clínica curada para consulta de balcão. Doses de adultos, salvo indicação. */
+const DRUGS = [
+// ---------- Analgésicos, antitérmicos e AINEs ----------
+{id:"paracetamol",n:"Paracetamol",cl:"Analgésico e antitérmico",r:"mip",tags:["paracetamol"],m:"Tylenol",cm:["paracetamol"],single:true,
+ ind:"Dor leve a moderada e febre.",
+ pos:"500 a 1.000 mg a cada 4 a 6 h. Máximo de 4 g/dia (em hepatopatas, etilistas e desnutridos, use doses menores, em geral até 2 g/dia).",
+ ped:"10 a 15 mg/kg/dose a cada 4 a 6 h, no máximo 5 doses em 24 h. Use a tabela por peso do produto.",
+ ci:"Hipersensibilidade; insuficiência hepática grave.",
+ al:"Principal causa de hepatotoxicidade por superdose: oriente a não somar com antigripais e associações que já contêm paracetamol."},
+{id:"dipirona",n:"Dipirona (metamizol)",cl:"Analgésico e antitérmico",r:"mip",tags:["dipirona"],m:"Novalgina",cm:["dipirona"],single:true,
+ ind:"Dor e febre.",
+ pos:"500 a 1.000 mg até 4 vezes ao dia (máximo de 4 g/dia).",
+ ped:"Use a tabela por peso da bula do produto. Não use em menores de 3 meses ou com menos de 5 kg.",
+ ci:"Hipersensibilidade a pirazolonas; histórico de agranulocitose; porfiria; deficiência de G6PD; 3º trimestre da gestação.",
+ al:"Risco raro de agranulocitose: oriente procurar atendimento se houver febre, dor de garganta ou feridas na boca durante o uso. Pode causar hipotensão."},
+{id:"ibuprofeno",n:"Ibuprofeno",cl:"Anti-inflamatório não esteroide (AINE)",r:"tvmip",tags:["aine"],m:"Advil, Alivium",cm:["ibuprofeno"],single:true,
+ ind:"Dor, febre, cólica menstrual, processos inflamatórios.",
+ pos:"200 a 400 mg a cada 6 a 8 h (automedicação até 1,2 g/dia). Sob prescrição: até 600 mg 3 a 4 vezes ao dia (máximo de 3,2 g/dia).",
+ ped:"A partir de 6 meses: 5 a 10 mg/kg/dose a cada 6 a 8 h (máximo de 40 mg/kg/dia).",
+ ci:"Úlcera ou sangramento GI ativo; asma induzida por AINE; insuficiência renal, hepática ou cardíaca grave; 3º trimestre da gestação.",
+ al:"Tomar após alimentação. Evitar em hipertensos descompensados, nefropatas, idosos e em uso de anticoagulante. Em dengue suspeita, não usar AINE."},
+{id:"aas",n:"Ácido acetilsalicílico (AAS)",cl:"AINE e antiagregante plaquetário",r:"mip",tags:["aine","antiplaq","aas"],m:"Aspirina, AAS",cm:["acido acetilsalicilico"],single:true,
+ ind:"Dor e febre (doses analgésicas); prevenção cardiovascular (doses baixas, sob orientação médica).",
+ pos:"Analgésico: 500 a 1.000 mg a cada 4 a 8 h (máximo de 4 g/dia). Antiagregante: 81 a 100 mg 1 vez ao dia.",
+ ci:"Menores de 16 anos com quadro viral (síndrome de Reye); dengue; úlcera ativa; hemofilia; 3º trimestre da gestação.",
+ al:"Não indicar para febre em suspeita de dengue. Interrompa a dispensação analgésica para quem já usa AAS 100 mg sem orientar sobre sangramento."},
+{id:"naproxeno",n:"Naproxeno",cl:"AINE",r:"tvmip",tags:["aine"],m:"Flanax, Naprosyn",cm:["naproxeno"],single:true,
+ ind:"Dor, cólica menstrual, inflamação musculoesquelética.",
+ pos:"250 a 500 mg a cada 12 h (naproxeno sódico 275 a 550 mg a cada 12 h). Automedicação: máximo de 3 comprimidos de 275 mg/dia.",
+ ci:"As mesmas dos AINEs: úlcera ativa, asma por AINE, insuficiência renal/hepática/cardíaca grave, 3º trimestre.",
+ al:"Meia-vida longa: maior risco GI em idosos. Tomar com alimento."},
+{id:"diclofenaco",n:"Diclofenaco (sódico ou potássico)",cl:"AINE",r:"tv",tags:["aine"],m:"Voltaren, Cataflam",cm:["diclofenaco"],single:true,
+ ind:"Dor e inflamação musculoesquelética, cólica, pós-operatório.",
+ pos:"50 mg 2 a 3 vezes ao dia (máximo de 150 mg/dia). Formas retard: 75 a 100 mg 1 a 2 vezes ao dia.",
+ ci:"Úlcera ativa; insuficiência cardíaca, doença coronariana ou cerebrovascular estabelecida; insuficiência renal/hepática grave; 3º trimestre.",
+ al:"Maior risco cardiovascular entre os AINEs tradicionais. Gel tópico é isento de prescrição."},
+{id:"nimesulida",n:"Nimesulida",cl:"AINE (inibidor preferencial da COX-2)",r:"tv",tags:["aine"],m:"Nisulid",cm:["nimesulida"],single:true,
+ ind:"Dor aguda, inflamação, dismenorreia.",
+ pos:"50 a 100 mg a cada 12 h, pelo menor tempo possível.",
+ ci:"Menores de 12 anos; hepatopatia; alcoolismo; úlcera ativa; gestação e lactação.",
+ al:"Hepatotoxicidade descrita: evitar uso prolongado e associação com outros hepatotóxicos."},
+{id:"cetoprofeno",n:"Cetoprofeno",cl:"AINE",r:"tv",tags:["aine"],m:"Profenid",cm:["cetoprofeno"],single:true,
+ ind:"Dor e inflamação musculoesquelética, pós-operatório.",
+ pos:"50 mg 3 vezes ao dia ou 100 mg 2 vezes ao dia; formas de liberação prolongada 150 a 200 mg 1 vez ao dia. Máximo de 300 mg/dia.",
+ ci:"As dos AINEs; 3º trimestre.",
+ al:"Gel tópico: risco de fotossensibilidade, evitar sol na área."},
+{id:"meloxicam",n:"Meloxicam",cl:"AINE (preferencial COX-2)",r:"tv",tags:["aine"],m:"Movatec",cm:["meloxicam"],single:true,
+ ind:"Osteoartrite, artrite reumatoide, espondilite.",
+ pos:"7,5 a 15 mg 1 vez ao dia.",
+ ci:"As dos AINEs; insuficiência renal grave não dialisada.",
+ al:"Dose única diária facilita adesão; mesmo risco GI e renal da classe."},
+{id:"celecoxibe",n:"Celecoxibe",cl:"AINE (inibidor seletivo da COX-2)",r:"tv",tags:["aine"],m:"Celebra",cm:["celecoxibe"],single:true,
+ ind:"Osteoartrite, artrite reumatoide, dor aguda, dismenorreia.",
+ pos:"Osteoartrite: 200 mg/dia em 1 ou 2 tomadas. Dor aguda: 400 mg no 1º dia, depois 200 mg 1 a 2 vezes ao dia.",
+ ci:"Alergia a sulfonamidas; doença cardiovascular estabelecida; pós-operatório de revascularização; 3º trimestre.",
+ al:"Menor risco GI que AINEs não seletivos, mas risco cardiovascular semelhante."},
+{id:"ciclobenzaprina",n:"Ciclobenzaprina",cl:"Relaxante muscular de ação central",r:"tv",tags:["snc"],m:"Miosan",cm:["ciclobenzaprina"],single:true,
+ ind:"Espasmo muscular associado a condições musculoesqueléticas agudas.",
+ pos:"5 a 10 mg até 3 vezes ao dia, por até 2 a 3 semanas.",
+ ci:"Uso de IMAO (14 dias); fase aguda pós-infarto, arritmias, insuficiência cardíaca; hipertireoidismo.",
+ al:"Sonolência e boca seca; cuidado ao dirigir. Efeito anticolinérgico em idosos (confusão, retenção urinária)."},
+{id:"tramadol",n:"Tramadol",cl:"Analgésico opioide",r:"rce_a2",tags:["opioide","tramadol","snc","sero"],m:"Tramal",cm:["tramadol"],single:false,
+ ind:"Dor moderada a intensa.",
+ pos:"50 a 100 mg a cada 4 a 6 h (máximo de 400 mg/dia). Idosos acima de 75 anos: máximo de 300 mg/dia.",
+ ci:"Uso de IMAO; epilepsia não controlada; intoxicação por álcool ou depressores do SNC; menores de 12 anos.",
+ al:"Reduz o limiar convulsivo e tem ação serotoninérgica. Náusea e tontura são comuns no início. Risco de dependência."},
+{id:"codeina_para",n:"Paracetamol + codeína",cl:"Analgésico opioide em associação",r:"rce_a2",tags:["opioide","paracetamol","snc"],m:"Tylex",cm:["codeina","paracetamol"],single:false,
+ ind:"Dor moderada a intensa.",
+ pos:"30 mg de codeína + 500 mg de paracetamol: 1 a 2 comprimidos a cada 4 a 6 h, respeitando o máximo de 4 g/dia de paracetamol (até 8 comprimidos/dia).",
+ ci:"Menores de 12 anos; pós-amigdalectomia em menores de 18 anos; metabolizadores ultrarrápidos de CYP2D6; lactação; depressão respiratória.",
+ al:"Constipação frequente. Não associar a outros produtos com paracetamol."},
+{id:"butilescopolamina",n:"Butilbrometo de escopolamina",cl:"Antiespasmódico",r:"mip",tags:[],m:"Buscopan",cm:["butilbrometo de escopolamina"],single:false,
+ ind:"Cólicas abdominais, gastrointestinais, biliares e urinárias.",
+ pos:"10 a 20 mg 3 a 5 vezes ao dia (máximo de 100 mg/dia). Associação com dipirona (Buscopan Composto): 1 a 2 comprimidos até 4 vezes ao dia.",
+ ci:"Glaucoma de ângulo fechado; miastenia gravis; megacólon; retenção urinária por obstrução.",
+ al:"Dor abdominal persistente, febre ou vômitos: encaminhar. Pode causar boca seca e taquicardia."},
+{id:"dimenidrinato",n:"Dimenidrinato",cl:"Antiemético e antivertiginoso (anti-histamínico)",r:"mip",tags:["snc"],m:"Dramin",cm:["dimenidrinato"],single:false,
+ ind:"Náuseas, vômitos e tontura; cinetose (enjoo de viagem).",
+ pos:"50 a 100 mg a cada 4 a 6 h (máximo de 400 mg/dia). Para viagem: 30 a 60 min antes.",
+ ci:"Porfiria; menores de 2 anos (verifique a forma farmacêutica).",
+ al:"Sonolência importante: não dirigir. Vômitos com desidratação em crianças e idosos: encaminhar."},
+
+// ---------- Antimicrobianos (RDC 471/2021) ----------
+{id:"amoxicilina",n:"Amoxicilina",cl:"Antibiótico betalactâmico (penicilina)",r:"atm",tags:["amoxi"],m:"Amoxil",cm:["amoxicilina"],single:true,
+ ind:"Infecções respiratórias (otite, sinusite, faringite estreptocócica), urinárias, de pele e odontológicas.",
+ pos:"500 mg a cada 8 h ou 875 mg a cada 12 h, conforme prescrição (geralmente 7 a 10 dias).",
+ ped:"25 a 50 mg/kg/dia divididos a cada 8 h (até 80 a 90 mg/kg/dia em otite média, conforme prescrição).",
+ ci:"Alergia a penicilinas ou histórico de reação grave a betalactâmicos.",
+ al:"Oriente completar o tratamento. Suspensão reconstituída tem validade curta, que varia por fabricante: confira a bula do produto."},
+{id:"amoxiclav",n:"Amoxicilina + clavulanato de potássio",cl:"Penicilina + inibidor de betalactamase",r:"atm",tags:["amoxi"],m:"Clavulin",cm:["amoxicilina","clavulan"],single:false,
+ ind:"Sinusite, otite, infecções respiratórias, de pele e mordeduras, quando há suspeita de bactéria produtora de betalactamase.",
+ pos:"500/125 mg a cada 8 h ou 875/125 mg a cada 12 h, junto às refeições.",
+ ci:"Alergia a penicilinas; histórico de icterícia ou disfunção hepática com amoxicilina-clavulanato.",
+ al:"Diarreia é frequente; tomar no início da refeição reduz o desconforto GI."},
+{id:"azitromicina",n:"Azitromicina",cl:"Antibiótico macrolídeo",r:"atm",tags:["macro","qt"],m:"Zitromax",cm:["azitromicina"],single:true,
+ ind:"Infecções respiratórias, otite, faringite em alérgicos a penicilina, uretrite e cervicite por clamídia.",
+ pos:"500 mg 1 vez ao dia por 3 dias, ou 500 mg no 1º dia e 250 mg do 2º ao 5º dia. Clamídia: 1 g em dose única.",
+ ped:"10 mg/kg 1 vez ao dia por 3 dias (máximo de 500 mg/dia).",
+ ci:"Alergia a macrolídeos; histórico de icterícia com azitromicina.",
+ al:"Prolonga o intervalo QT: atenção a cardiopatas e associação com outros fármacos que prolongam o QT."},
+{id:"claritromicina",n:"Claritromicina",cl:"Antibiótico macrolídeo",r:"atm",tags:["macro","qt","inib3a4","claritro"],m:"Klaricid",cm:["claritromicina"],single:true,
+ ind:"Infecções respiratórias, de pele; erradicação de H. pylori (em esquema).",
+ pos:"250 a 500 mg a cada 12 h, por 7 a 14 dias.",
+ ci:"Uso com sinvastatina, lovastatina, colchicina (em insuficiência renal/hepática), domperidona, ergotamínicos; prolongamento do QT.",
+ al:"Potente inibidor do CYP3A4: revise sempre os outros medicamentos do paciente."},
+{id:"cefalexina",n:"Cefalexina",cl:"Antibiótico cefalosporina de 1ª geração",r:"atm",tags:[],m:"Keflex",cm:["cefalexina"],single:true,
+ ind:"Infecções de pele e partes moles, faringite, infecção urinária.",
+ pos:"500 mg a cada 6 h (250 a 1.000 mg conforme gravidade).",
+ ped:"25 a 50 mg/kg/dia divididos a cada 6 h.",
+ ci:"Alergia a cefalosporinas; cautela em alergia grave a penicilinas.",
+ al:"Ajustar em insuficiência renal."},
+{id:"ciprofloxacino",n:"Ciprofloxacino",cl:"Antibiótico fluoroquinolona",r:"atm",tags:["quino","qt"],m:"Cipro",cm:["ciprofloxacino"],single:true,
+ ind:"Infecções urinárias, prostatite, diarreia infecciosa, infecções ósseas.",
+ pos:"250 a 750 mg a cada 12 h. Infecção urinária não complicada: 250 mg a cada 12 h por 3 dias (quando indicado).",
+ ci:"Menores de 18 anos (exceto indicações específicas); gestação; histórico de tendinite por quinolona; uso de tizanidina.",
+ al:"Risco de tendinite e ruptura de tendão (maior com corticoide e em idosos). Separar de leite, cálcio, ferro e antiácidos."},
+{id:"levofloxacino",n:"Levofloxacino",cl:"Antibiótico fluoroquinolona",r:"atm",tags:["quino","qt"],m:"Levaquin, Tavanic",cm:["levofloxacino"],single:true,
+ ind:"Pneumonia, sinusite, infecções urinárias complicadas, pele.",
+ pos:"500 a 750 mg 1 vez ao dia, por 5 a 14 dias.",
+ ci:"Menores de 18 anos; gestação e lactação; epilepsia; histórico de tendinopatia por quinolona.",
+ al:"Prolonga o QT; disglicemia em diabéticos; tendinopatia."},
+{id:"smxtmp",n:"Sulfametoxazol + trimetoprima",cl:"Antibiótico sulfonamida em associação",r:"atm",tags:["smx"],m:"Bactrim",cm:["sulfametoxazol","trimetoprima"],single:false,
+ ind:"Infecção urinária, algumas infecções respiratórias e de pele, pneumocistose.",
+ pos:"800/160 mg a cada 12 h.",
+ ci:"Alergia a sulfas; anemia megaloblástica por folato; insuficiência renal ou hepática grave; gestação a termo; menores de 2 meses.",
+ al:"Hidratação adequada. Hipercalemia com IECA/BRA/espironolactona. Reações cutâneas graves raras: suspender se surgir erupção."},
+{id:"nitrofurantoina",n:"Nitrofurantoína",cl:"Antibacteriano urinário",r:"atm",tags:[],m:"Macrodantina",cm:["nitrofurantoina"],single:true,
+ ind:"Cistite não complicada; profilaxia de infecção urinária de repetição.",
+ pos:"100 mg a cada 6 h por 5 a 7 dias. Profilaxia: 50 a 100 mg à noite.",
+ ci:"Insuficiência renal relevante; gestação a termo e trabalho de parto; recém-nascidos.",
+ al:"Tomar com alimento. Pode escurecer a urina."},
+{id:"doxiciclina",n:"Doxiciclina",cl:"Antibiótico tetraciclina",r:"atm",tags:["tetra"],m:"Vibramicina",cm:["doxiciclina"],single:true,
+ ind:"Acne inflamatória, infecções respiratórias, DSTs, leptospirose, profilaxia de malária.",
+ pos:"100 mg a cada 12 h (ou 200 mg no 1º dia e depois 100 mg/dia).",
+ ci:"Gestação; menores de 8 anos; uso com isotretinoína.",
+ al:"Tomar com bastante água e não deitar por 30 min (esofagite). Fotossensibilidade. Separar de cálcio, ferro e antiácidos."},
+{id:"metronidazol",n:"Metronidazol",cl:"Antibacteriano e antiparasitário (nitroimidazol)",r:"atm",tags:["metro"],m:"Flagyl",cm:["metronidazol"],single:true,
+ ind:"Vaginose bacteriana, tricomoníase, giardíase, amebíase, infecções por anaeróbios.",
+ pos:"Vaginose: 500 mg a cada 12 h por 7 dias. Tricomoníase: 2 g em dose única. Giardíase: 250 mg a cada 8 h por 5 a 7 dias.",
+ ci:"1º trimestre da gestação (forma oral); uso de dissulfiram nas 2 semanas anteriores.",
+ al:"Proibido álcool durante e por pelo menos 3 dias após o fim do tratamento. Gosto metálico é comum."},
+
+// ---------- Antifúngicos, antivirais, antiparasitários ----------
+{id:"fluconazol",n:"Fluconazol",cl:"Antifúngico azólico",r:"tv",tags:["qt","inib3a4","flucon"],m:"Zoltec",cm:["fluconazol"],single:true,
+ ind:"Candidíase vaginal, oral e esofágica; dermatofitoses (algumas).",
+ pos:"Candidíase vaginal: 150 mg em dose única. Recorrente: conforme prescrição.",
+ ci:"Uso com fármacos que prolongam o QT e são metabolizados pelo CYP3A4 (ex.: domperidona); hipersensibilidade a azólicos.",
+ al:"Inibe CYP2C9 e CYP3A4: aumenta o efeito de varfarina, sulfonilureias e estatinas."},
+{id:"aciclovir",n:"Aciclovir",cl:"Antiviral",r:"tv",tags:[],m:"Zovirax",cm:["aciclovir"],single:true,
+ ind:"Herpes simples (labial e genital); herpes-zóster; varicela.",
+ pos:"Herpes simples: 200 mg 5 vezes ao dia por 5 dias (1º episódio genital: até 10 dias). Zóster: 800 mg 5 vezes ao dia por 7 dias.",
+ ci:"Hipersensibilidade ao aciclovir ou valaciclovir.",
+ al:"Iniciar o mais cedo possível. Hidratação e ajuste em insuficiência renal. Creme tópico é isento de prescrição."},
+{id:"ivermectina",n:"Ivermectina",cl:"Antiparasitário",r:"tv",tags:[],m:"Revectina",cm:["ivermectina"],single:true,
+ ind:"Estrongiloidíase, escabiose, pediculose, oncocercose, filariose.",
+ pos:"200 mcg/kg em dose única (ex.: 6 mg para 15 a 24 kg, 12 mg para 36 a 50 kg). Escabiose e pediculose: repetir após 7 a 14 dias.",
+ ci:"Crianças com menos de 15 kg; gestação; lactação; meningite.",
+ al:"Tomar em jejum, com água."},
+{id:"albendazol",n:"Albendazol",cl:"Anti-helmíntico",r:"tv",tags:[],m:"Zentel",cm:["albendazol"],single:true,
+ ind:"Ascaridíase, ancilostomíase, enterobíase, tricuríase, estrongiloidíase, teníase.",
+ pos:"400 mg em dose única para a maioria das verminoses (maiores de 2 anos). Estrongiloidíase e teníase: 400 mg/dia por 3 dias.",
+ ci:"Gestação; menores de 2 anos (conforme apresentação).",
+ al:"Enterobíase: tratar todos da casa e repetir após 2 semanas."},
+
+// ---------- Cardiovascular ----------
+{id:"losartana",n:"Losartana potássica",cl:"Bloqueador do receptor da angiotensina (BRA)",r:"tv",tags:["bra","raa"],m:"Cozaar",cm:["losartana"],single:true,
+ ind:"Hipertensão; proteção renal em diabéticos com proteinúria; insuficiência cardíaca.",
+ pos:"50 mg 1 vez ao dia (25 a 100 mg/dia).",
+ ci:"Gestação; uso com alisquireno em diabéticos.",
+ al:"Teratogênico: oriente mulheres em idade fértil. Monitorar potássio e função renal."},
+{id:"valsartana",n:"Valsartana",cl:"BRA",r:"tv",tags:["bra","raa"],m:"Diovan",cm:["valsartana"],single:false,
+ ind:"Hipertensão; insuficiência cardíaca; pós-infarto.",
+ pos:"80 a 160 mg 1 vez ao dia (máximo de 320 mg/dia).",
+ ci:"Gestação; uso com alisquireno em diabéticos.",
+ al:"Também existe associada a sacubitril (Entresto), com regras próprias."},
+{id:"enalapril",n:"Maleato de enalapril",cl:"Inibidor da ECA (IECA)",r:"tv",tags:["ieca","raa"],m:"Renitec",cm:["enalapril"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca; disfunção ventricular.",
+ pos:"5 a 20 mg 1 a 2 vezes ao dia (máximo de 40 mg/dia).",
+ ci:"Gestação; histórico de angioedema; uso com sacubitril-valsartana (intervalo de 36 h).",
+ al:"Tosse seca é efeito comum (motivo de troca por BRA). Angioedema exige atendimento imediato."},
+{id:"captopril",n:"Captopril",cl:"IECA",r:"tv",tags:["ieca","raa"],m:"Capoten",cm:["captopril"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca; pós-infarto.",
+ pos:"25 a 50 mg 2 a 3 vezes ao dia (máximo de 150 mg/dia), 1 h antes das refeições.",
+ ci:"Gestação; histórico de angioedema.",
+ al:"Meia-vida curta, várias tomadas ao dia. Tosse seca."},
+{id:"anlodipino",n:"Besilato de anlodipino",cl:"Bloqueador dos canais de cálcio (di-hidropiridínico)",r:"tv",tags:["anlo"],m:"Norvasc",cm:["anlodipino"],single:true,
+ ind:"Hipertensão; angina.",
+ pos:"5 a 10 mg 1 vez ao dia.",
+ ci:"Choque cardiogênico; estenose aórtica grave; hipotensão grave.",
+ al:"Edema de tornozelo é comum e dose-dependente."},
+{id:"hctz",n:"Hidroclorotiazida",cl:"Diurético tiazídico",r:"tv",tags:["tiaz","diur"],m:"Clorana",cm:["hidroclorotiazida"],single:true,
+ ind:"Hipertensão; edema.",
+ pos:"12,5 a 25 mg 1 vez ao dia, pela manhã.",
+ ci:"Anúria; alergia a sulfonamidas; hipocalemia ou hiponatremia refratária.",
+ al:"Pode causar hipocalemia, hiperuricemia (gota) e hiperglicemia. Tomar de manhã."},
+{id:"clortalidona",n:"Clortalidona",cl:"Diurético tiazídico-símile",r:"tv",tags:["tiaz","diur"],m:"Higroton",cm:["clortalidona"],single:true,
+ ind:"Hipertensão; edema.",
+ pos:"12,5 a 25 mg 1 vez ao dia, pela manhã.",
+ ci:"Anúria; insuficiência renal grave; hipocalemia refratária.",
+ al:"Mais potente e de ação mais longa que a hidroclorotiazida; mesmo perfil de distúrbios eletrolíticos."},
+{id:"furosemida",n:"Furosemida",cl:"Diurético de alça",r:"tv",tags:["alca","diur"],m:"Lasix",cm:["furosemida"],single:true,
+ ind:"Edema (insuficiência cardíaca, renal, hepática); hipertensão em casos selecionados.",
+ pos:"20 a 80 mg/dia em 1 ou 2 tomadas (pela manhã).",
+ ci:"Anúria; desidratação grave; hipocalemia grave.",
+ al:"Monitorar potássio, sódio e função renal. Risco de hipotensão em idosos."},
+{id:"espironolactona",n:"Espironolactona",cl:"Diurético poupador de potássio (antagonista da aldosterona)",r:"tv",tags:["poupk","diur"],m:"Aldactone",cm:["espironolactona"],single:true,
+ ind:"Insuficiência cardíaca; hiperaldosteronismo; ascite; hipertensão resistente; acne e hirsutismo (uso dermatológico).",
+ pos:"25 a 100 mg/dia (até 400 mg em hiperaldosteronismo).",
+ ci:"Hipercalemia; insuficiência renal grave; doença de Addison.",
+ al:"Risco de hipercalemia, sobretudo com IECA/BRA e suplementos de potássio. Ginecomastia."},
+{id:"atenolol",n:"Atenolol",cl:"Betabloqueador cardiosseletivo",r:"tv",tags:["bb"],m:"Atenol",cm:["atenolol"],single:true,
+ ind:"Hipertensão; angina; arritmias.",
+ pos:"25 a 100 mg 1 vez ao dia.",
+ ci:"Bradicardia sinusal; bloqueio AV de 2º/3º grau; choque cardiogênico; insuficiência cardíaca descompensada.",
+ al:"Não suspender abruptamente (risco de rebote). Pode mascarar sinais de hipoglicemia."},
+{id:"propranolol",n:"Cloridrato de propranolol",cl:"Betabloqueador não seletivo",r:"tv",tags:["bb","bbns","bb2d6"],m:"Inderal",cm:["propranolol"],single:true,
+ ind:"Hipertensão; angina; arritmias; profilaxia de enxaqueca; tremor essencial; ansiedade de desempenho.",
+ pos:"40 mg 2 a 3 vezes ao dia, com ajuste (enxaqueca: 40 a 160 mg/dia).",
+ ci:"Asma e DPOC com broncoespasmo; bradicardia; bloqueio AV; insuficiência cardíaca descompensada.",
+ al:"Contraindicado em asmáticos. Não suspender abruptamente."},
+{id:"carvedilol",n:"Carvedilol",cl:"Betabloqueador não seletivo com ação alfa-1",r:"tv",tags:["bb","bbns","bb2d6"],m:"",cm:["carvedilol"],single:true,
+ ind:"Insuficiência cardíaca; hipertensão; pós-infarto.",
+ pos:"Insuficiência cardíaca: iniciar 3,125 mg a cada 12 h e dobrar a cada 2 semanas até 25 mg a cada 12 h. Hipertensão: 12,5 a 25 mg a cada 12 h.",
+ ci:"Asma; insuficiência cardíaca descompensada; bradicardia grave; hepatopatia grave.",
+ al:"Tomar com alimento (reduz hipotensão postural)."},
+{id:"metoprolol",n:"Succinato de metoprolol",cl:"Betabloqueador cardiosseletivo",r:"tv",tags:["bb","bb2d6"],m:"Selozok",cm:["metoprolol"],single:true,
+ ind:"Hipertensão; angina; insuficiência cardíaca; arritmias.",
+ pos:"25 a 200 mg 1 vez ao dia (liberação prolongada; não partir ao meio se não for sulcado).",
+ ci:"Bradicardia; bloqueio AV; choque cardiogênico.",
+ al:"Inibidores do CYP2D6 (fluoxetina, paroxetina, bupropiona) aumentam seus níveis."},
+{id:"isossorbida",n:"Mononitrato / dinitrato de isossorbida",cl:"Nitrato (vasodilatador)",r:"tv",tags:["nitrato"],m:"Monocordil, Isordil",cm:["isossorbida"],single:false,
+ ind:"Angina (prevenção; o dinitrato sublingual também trata a crise).",
+ pos:"Mononitrato: 20 a 40 mg 2 vezes ao dia com intervalo assimétrico (ex.: 8 h e 15 h). Dinitrato sublingual: 5 mg na crise.",
+ ci:"Uso de sildenafila, tadalafila ou vardenafila; hipotensão grave; choque.",
+ al:"Pergunte sempre sobre remédios para disfunção erétil."},
+{id:"sinvastatina",n:"Sinvastatina",cl:"Hipolipemiante (estatina)",r:"tv",tags:["statin","sinva"],m:"Zocor",cm:["sinvastatina"],single:true,
+ ind:"Hipercolesterolemia; prevenção cardiovascular.",
+ pos:"10 a 40 mg 1 vez ao dia, à noite.",
+ ci:"Doença hepática ativa; gestação e lactação; uso de inibidores potentes do CYP3A4 (claritromicina, itraconazol).",
+ al:"Dor muscular inexplicada: suspender e procurar o médico. Com anlodipino, máximo de 20 mg/dia."},
+{id:"atorvastatina",n:"Atorvastatina",cl:"Estatina",r:"tv",tags:["statin","atorva"],m:"Lipitor, Citalor",cm:["atorvastatina"],single:true,
+ ind:"Hipercolesterolemia; prevenção cardiovascular.",
+ pos:"10 a 80 mg 1 vez ao dia, a qualquer hora.",
+ ci:"Doença hepática ativa; gestação e lactação.",
+ al:"Mialgia: orientar. Menos interações que a sinvastatina, mas atenção à claritromicina."},
+{id:"rosuvastatina",n:"Rosuvastatina cálcica",cl:"Estatina",r:"tv",tags:["statin"],m:"Crestor",cm:["rosuvastatina"],single:true,
+ ind:"Hipercolesterolemia; prevenção cardiovascular.",
+ pos:"5 a 40 mg 1 vez ao dia, a qualquer hora (pacientes asiáticos: iniciar com 5 mg).",
+ ci:"Doença hepática ativa; gestação e lactação; insuficiência renal grave (dose de 40 mg).",
+ al:"Pouca interação pelo CYP3A4."},
+{id:"clopidogrel",n:"Clopidogrel",cl:"Antiagregante plaquetário",r:"tv",tags:["antiplaq","clopi"],m:"Plavix",cm:["clopidogrel"],single:true,
+ ind:"Prevenção de eventos após infarto, AVC, doença arterial periférica, stent coronariano.",
+ pos:"75 mg 1 vez ao dia.",
+ ci:"Sangramento ativo; insuficiência hepática grave.",
+ al:"Não suspender sem orientação do cardiologista (risco de trombose de stent). Prefira pantoprazol se precisar de IBP."},
+{id:"varfarina",n:"Varfarina sódica",cl:"Anticoagulante (antagonista da vitamina K)",r:"tv",tags:["varf","anticoag"],m:"Marevan, Coumadin",cm:["varfarina"],single:true,
+ ind:"Fibrilação atrial; trombose venosa e embolia pulmonar; próteses valvares.",
+ pos:"Dose individual ajustada pelo INR (alvo geralmente 2 a 3), sempre no mesmo horário.",
+ ci:"Sangramento ativo; gestação; hipertensão grave descontrolada.",
+ al:"Muitas interações: revise todo medicamento novo, inclusive fitoterápicos e antibióticos. Mantenha constante a ingestão de vegetais verde-escuros."},
+{id:"rivaroxabana",n:"Rivaroxabana",cl:"Anticoagulante oral direto (inibidor do fator Xa)",r:"tv",tags:["doac","anticoag"],m:"Xarelto",cm:["rivaroxabana"],single:true,
+ ind:"Fibrilação atrial; tratamento e prevenção de TVP/TEP.",
+ pos:"FA: 20 mg 1 vez ao dia com a refeição (15 mg se ClCr 15 a 49 mL/min). TVP/TEP: 15 mg 2 vezes ao dia por 21 dias, depois 20 mg 1 vez ao dia.",
+ ci:"Sangramento ativo; hepatopatia com coagulopatia; gestação e lactação.",
+ al:"As doses de 15 e 20 mg devem ser tomadas com alimento."},
+{id:"apixabana",n:"Apixabana",cl:"Anticoagulante oral direto (inibidor do fator Xa)",r:"tv",tags:["doac","anticoag"],m:"Eliquis",cm:["apixabana"],single:true,
+ ind:"Fibrilação atrial; tratamento e prevenção de TVP/TEP.",
+ pos:"FA: 5 mg 2 vezes ao dia (2,5 mg 2 vezes ao dia se 2 destes critérios: 80 anos ou mais, 60 kg ou menos, creatinina de 1,5 mg/dL ou mais).",
+ ci:"Sangramento ativo; hepatopatia com coagulopatia.",
+ al:"Não interromper sem orientação médica."},
+
+// ---------- Endócrino e metabolismo ----------
+{id:"metformina",n:"Cloridrato de metformina",cl:"Antidiabético (biguanida)",r:"tv",tags:["metf","antidiab"],m:"Glifage",cm:["metformina"],single:true,
+ ind:"Diabetes tipo 2; pré-diabetes; síndrome dos ovários policísticos (uso comum).",
+ pos:"500 a 850 mg 1 a 3 vezes ao dia, com as refeições (máximo de 2,55 g/dia). XR: 500 a 2.000 mg 1 vez ao dia, no jantar.",
+ ci:"TFG abaixo de 30 mL/min; acidose; insuficiência hepática; alcoolismo; situações de hipóxia.",
+ al:"Desconforto GI no início: aumentar a dose aos poucos. Uso prolongado pode reduzir vitamina B12."},
+{id:"glibenclamida",n:"Glibenclamida",cl:"Antidiabético (sulfonilureia)",r:"tv",tags:["su","antidiab"],m:"Daonil",cm:["glibenclamida"],single:false,
+ ind:"Diabetes tipo 2.",
+ pos:"2,5 a 20 mg/dia, antes do café ou das refeições principais.",
+ ci:"Diabetes tipo 1; cetoacidose; insuficiência renal ou hepática grave; gestação.",
+ al:"Maior risco de hipoglicemia da classe, sobretudo em idosos. Oriente não pular refeições."},
+{id:"gliclazida",n:"Gliclazida",cl:"Sulfonilureia",r:"tv",tags:["su","antidiab"],m:"Diamicron",cm:["gliclazida"],single:true,
+ ind:"Diabetes tipo 2.",
+ pos:"Liberação modificada: 30 a 120 mg 1 vez ao dia, no café da manhã.",
+ ci:"Diabetes tipo 1; insuficiência renal ou hepática grave; gestação e lactação.",
+ al:"Hipoglicemia: oriente sinais e conduta."},
+{id:"sitagliptina",n:"Sitagliptina",cl:"Antidiabético (inibidor da DPP-4)",r:"tv",tags:["antidiab"],m:"Januvia",cm:["sitagliptina"],single:false,
+ ind:"Diabetes tipo 2.",
+ pos:"100 mg 1 vez ao dia (50 mg se TFG de 30 a 44; 25 mg se abaixo de 30).",
+ ci:"Diabetes tipo 1; cetoacidose.",
+ al:"Baixo risco de hipoglicemia isolada. Dor abdominal intensa: suspeitar de pancreatite."},
+{id:"dapagliflozina",n:"Dapagliflozina",cl:"Antidiabético (inibidor do SGLT2)",r:"tv",tags:["sglt2","antidiab"],m:"Forxiga",cm:["dapagliflozina"],single:false,
+ ind:"Diabetes tipo 2; insuficiência cardíaca; doença renal crônica.",
+ pos:"10 mg 1 vez ao dia.",
+ ci:"Diabetes tipo 1 (fora de indicação específica); cetoacidose.",
+ al:"Infecção genital por fungo é comum: oriente higiene. Hidratação adequada."},
+{id:"empagliflozina",n:"Empagliflozina",cl:"Inibidor do SGLT2",r:"tv",tags:["sglt2","antidiab"],m:"Jardiance",cm:["empagliflozina"],single:false,
+ ind:"Diabetes tipo 2; insuficiência cardíaca; doença renal crônica.",
+ pos:"10 a 25 mg 1 vez ao dia.",
+ ci:"Cetoacidose; diálise.",
+ al:"Mesmas orientações da dapagliflozina."},
+{id:"semaglutida",n:"Semaglutida",cl:"Agonista do receptor de GLP-1",r:"glp1",tags:["glp1","antidiab"],m:"Ozempic, Wegovy, Rybelsus (oral)",cm:["semaglutida"],single:true,
+ ind:"Diabetes tipo 2 (Ozempic, Rybelsus); obesidade e sobrepeso com comorbidade (Wegovy).",
+ pos:"Ozempic: 0,25 mg por semana por 4 semanas, depois 0,5 mg; aumentar até 1 a 2 mg semanais conforme resposta. Wegovy: escalonamento até 2,4 mg semanais. Rybelsus: 3 mg/dia por 30 dias, depois 7 a 14 mg, em jejum, com até 120 mL de água, 30 min antes de comer.",
+ ci:"História pessoal ou familiar de carcinoma medular de tireoide ou NEM2; gestação.",
+ al:"Náusea é comum no escalonamento. Caneta em uso fora da geladeira por tempo limitado (veja a bula). Dor abdominal intensa: suspeitar de pancreatite."},
+{id:"liraglutida",n:"Liraglutida",cl:"Agonista do receptor de GLP-1",r:"glp1",tags:["glp1","antidiab"],m:"Victoza, Saxenda",cm:["liraglutida"],single:true,
+ ind:"Diabetes tipo 2 (Victoza); obesidade (Saxenda).",
+ pos:"Victoza: 0,6 mg/dia por 1 semana, depois 1,2 mg (até 1,8 mg). Saxenda: aumentos semanais de 0,6 mg até 3 mg/dia.",
+ ci:"Carcinoma medular de tireoide (história pessoal ou familiar) ou NEM2; gestação.",
+ al:"Aplicação diária, subcutânea."},
+{id:"tirzepatida",n:"Tirzepatida",cl:"Agonista duplo GIP/GLP-1",r:"glp1",tags:["glp1","tirz","antidiab"],m:"Mounjaro",cm:["tirzepatida"],single:true,
+ ind:"Diabetes tipo 2; obesidade.",
+ pos:"2,5 mg por semana por 4 semanas; depois aumentos de 2,5 mg a cada 4 semanas, até no máximo 15 mg semanais.",
+ ci:"Carcinoma medular de tireoide (história pessoal ou familiar) ou NEM2; gestação.",
+ al:"Reduz a eficácia de anticoncepcional oral: método adicional por 4 semanas após o início e após cada aumento de dose."},
+{id:"levotiroxina",n:"Levotiroxina sódica",cl:"Hormônio tireoidiano",r:"tv",tags:["levot"],m:"Puran T4, Synthroid, Euthyrox",cm:["levotiroxina"],single:true,
+ ind:"Hipotireoidismo; supressão de TSH após tratamento de câncer de tireoide.",
+ pos:"Dose individual (cerca de 1,6 mcg/kg/dia), em jejum, 30 a 60 min antes do café.",
+ ci:"Tireotoxicose não tratada; infarto agudo; insuficiência adrenal não corrigida.",
+ al:"Evite trocar de marca sem necessidade (pequenas variações alteram o TSH). Separar 4 h de cálcio, ferro e antiácidos."},
+{id:"prednisona",n:"Prednisona",cl:"Corticoide sistêmico",r:"tv",tags:["cort"],m:"Meticorten",cm:["prednisona"],single:true,
+ ind:"Alergias graves, asma, doenças reumáticas e autoimunes, dermatoses inflamatórias.",
+ pos:"5 a 60 mg/dia conforme a indicação, de preferência pela manhã. Uso acima de 2 a 3 semanas exige retirada gradual.",
+ ci:"Infecção fúngica sistêmica; vacinas de vírus vivo em doses imunossupressoras.",
+ al:"Eleva glicemia e pressão; tomar com alimento. Não suspender bruscamente após uso prolongado."},
+{id:"prednisolona",n:"Prednisolona",cl:"Corticoide sistêmico",r:"tv",tags:["cort"],m:"Predsim, Prelone",cm:["prednisolona"],single:true,
+ ind:"As da prednisona; solução oral muito usada em pediatria (crise de asma, laringite).",
+ pos:"Adultos: 5 a 60 mg/dia. Crianças: 1 a 2 mg/kg/dia (máximo de 40 a 60 mg/dia) por curto período, conforme prescrição.",
+ ci:"Infecção fúngica sistêmica.",
+ al:"Mesmos cuidados da prednisona."},
+{id:"dexametasona",n:"Dexametasona",cl:"Corticoide sistêmico",r:"tv",tags:["cort"],m:"Decadron",cm:["dexametasona"],single:false,
+ ind:"Processos inflamatórios e alérgicos; edema cerebral; náusea por quimioterapia.",
+ pos:"0,75 a 9 mg/dia conforme a indicação.",
+ ci:"Infecção fúngica sistêmica.",
+ al:"Potência alta e ação longa (0,75 mg equivale a cerca de 5 mg de prednisona)."},
+
+// ---------- Gastrointestinal ----------
+{id:"omeprazol",n:"Omeprazol",cl:"Inibidor da bomba de prótons (IBP)",r:"tvmip",tags:["ibp","omeeso"],m:"Losec",cm:["omeprazol"],single:true,
+ ind:"Azia, refluxo, úlcera péptica, gastroproteção com AINE, H. pylori (em esquema).",
+ pos:"20 mg 1 vez ao dia, em jejum, 30 min antes do café (refluxo grave: 40 mg/dia; H. pylori: 20 mg 2 vezes ao dia).",
+ ci:"Uso com nelfinavir ou atazanavir.",
+ al:"Azia frequente por mais de 2 semanas, perda de peso ou dificuldade para engolir: encaminhar. Uso crônico: risco de deficiência de B12 e magnésio."},
+{id:"pantoprazol",n:"Pantoprazol",cl:"IBP",r:"tv",tags:["ibp"],m:"Pantozol",cm:["pantoprazol"],single:true,
+ ind:"Refluxo, úlcera, gastroproteção.",
+ pos:"40 mg 1 vez ao dia em jejum (manutenção: 20 mg).",
+ ci:"Uso com atazanavir.",
+ al:"IBP preferido para quem usa clopidogrel."},
+{id:"esomeprazol",n:"Esomeprazol",cl:"IBP",r:"tv",tags:["ibp","omeeso"],m:"Nexium",cm:["esomeprazol"],single:true,
+ ind:"Refluxo, esofagite, úlcera, H. pylori.",
+ pos:"20 a 40 mg 1 vez ao dia em jejum.",
+ ci:"Uso com nelfinavir.",
+ al:"Evite com clopidogrel."},
+{id:"domperidona",n:"Domperidona",cl:"Procinético e antiemético",r:"tv",tags:["qt","domp"],m:"Motilium",cm:["domperidona"],single:true,
+ ind:"Náuseas e vômitos; sensação de estômago cheio.",
+ pos:"10 mg até 3 vezes ao dia (máximo de 30 mg/dia), por no máximo 1 semana.",
+ ci:"Prolongamento do QT, distúrbios eletrolíticos, cardiopatia; insuficiência hepática moderada/grave; uso com inibidores potentes do CYP3A4; prolactinoma.",
+ al:"Risco de arritmia: menor dose pelo menor tempo."},
+{id:"metoclopramida",n:"Metoclopramida",cl:"Procinético e antiemético (antidopaminérgico)",r:"tv",tags:["metoclo"],m:"Plasil",cm:["metoclopramida"],single:true,
+ ind:"Náuseas e vômitos; gastroparesia.",
+ pos:"10 mg até 3 vezes ao dia (máximo de 30 mg/dia), por no máximo 5 dias.",
+ ci:"Menores de 1 ano; obstrução ou hemorragia GI; feocromocitoma; epilepsia; doença de Parkinson.",
+ al:"Risco de reações extrapiramidais, sobretudo em jovens e crianças."},
+{id:"ondansetrona",n:"Ondansetrona",cl:"Antiemético (antagonista 5-HT3)",r:"tv",tags:["qt"],m:"Vonau, Zofran",cm:["ondansetrona"],single:true,
+ ind:"Náuseas e vômitos (quimioterapia, pós-operatório, gastroenterite).",
+ pos:"4 a 8 mg a cada 8 a 12 h, conforme a indicação.",
+ ci:"Uso com apomorfina; síndrome do QT longo congênita.",
+ al:"Constipação e cefaleia. Prolonga o QT."},
+{id:"simeticona",n:"Simeticona",cl:"Antiflatulento",r:"mip",tags:[],m:"Luftal",cm:["simeticona"],single:false,
+ ind:"Gases e distensão abdominal.",
+ pos:"40 a 125 mg após as refeições e ao deitar, conforme a apresentação.",
+ ci:"Hipersensibilidade.",
+ al:"Não é absorvida: seguro na maioria das situações."},
+{id:"loperamida",n:"Loperamida",cl:"Antidiarreico",r:"mip",tags:[],m:"Imosec",cm:["loperamida"],single:true,
+ ind:"Diarreia aguda não infecciosa.",
+ pos:"4 mg iniciais e 2 mg após cada evacuação líquida. Máximo de 8 mg/dia em automedicação (16 mg/dia sob prescrição).",
+ ci:"Menores de 2 anos; diarreia com sangue ou febre alta; colite pseudomembranosa; colite ulcerativa aguda.",
+ al:"Priorize a reidratação oral. Diarreia por mais de 48 h, sangue ou febre: encaminhar."},
+{id:"bisacodil",n:"Bisacodil",cl:"Laxante estimulante",r:"mip",tags:[],m:"Dulcolax",cm:["bisacodil"],single:false,
+ ind:"Constipação ocasional; preparo de exames.",
+ pos:"5 a 10 mg à noite.",
+ ci:"Abdome agudo; obstrução intestinal; desidratação grave.",
+ al:"Uso contínuo causa dependência. Oriente fibras e água."},
+
+// ---------- Respiratório e alergia ----------
+{id:"loratadina",n:"Loratadina",cl:"Anti-histamínico H1 de 2ª geração",r:"mip",tags:[],m:"Claritin",cm:["loratadina"],single:true,
+ ind:"Rinite alérgica; urticária.",
+ pos:"10 mg 1 vez ao dia.",
+ ped:"2 a 12 anos: até 30 kg, 5 mg/dia; acima de 30 kg, 10 mg/dia.",
+ ci:"Hipersensibilidade.",
+ al:"Pouca sedação. Associação com pseudoefedrina tem outras contraindicações (hipertensão, glaucoma)."},
+{id:"desloratadina",n:"Desloratadina",cl:"Anti-histamínico H1 de 2ª geração",r:"tvmip",tags:[],m:"Desalex",cm:["desloratadina"],single:true,
+ ind:"Rinite alérgica; urticária.",
+ pos:"5 mg 1 vez ao dia.",
+ ci:"Hipersensibilidade à desloratadina ou loratadina.",
+ al:"Pouca sedação."},
+{id:"fexofenadina",n:"Fexofenadina",cl:"Anti-histamínico H1 de 2ª geração",r:"tvmip",tags:[],m:"Allegra",cm:["fexofenadina"],single:true,
+ ind:"Rinite alérgica; urticária crônica.",
+ pos:"Rinite: 120 mg 1 vez ao dia. Urticária: 180 mg 1 vez ao dia.",
+ ci:"Hipersensibilidade.",
+ al:"Não tomar com suco de frutas (reduz a absorção) nem com antiácido de alumínio/magnésio."},
+{id:"cetirizina",n:"Cetirizina",cl:"Anti-histamínico H1 de 2ª geração",r:"tvmip",tags:[],m:"Zyrtec",cm:["cetirizina"],single:false,
+ ind:"Rinite alérgica; urticária.",
+ pos:"10 mg 1 vez ao dia.",
+ ci:"Insuficiência renal grave.",
+ al:"Pode causar sonolência em parte dos pacientes."},
+{id:"dexclorfeniramina",n:"Dexclorfeniramina",cl:"Anti-histamínico H1 de 1ª geração",r:"tvmip",tags:["snc"],m:"Polaramine",cm:["dexclorfeniramina"],single:false,
+ ind:"Alergias, prurido, urticária.",
+ pos:"2 mg a cada 4 a 6 h (máximo de 12 mg/dia).",
+ ci:"Recém-nascidos e prematuros; lactação; uso de IMAO.",
+ al:"Sedação e efeito anticolinérgico. Evitar em idosos e ao dirigir."},
+{id:"salbutamol",n:"Salbutamol",cl:"Broncodilatador beta-2 de curta ação",r:"tv",tags:["salbu"],m:"Aerolin",cm:["salbutamol"],single:false,
+ ind:"Crise de asma e broncoespasmo.",
+ pos:"Spray 100 mcg: 1 a 2 jatos a cada 4 a 6 h se necessário (com espaçador).",
+ ci:"Hipersensibilidade.",
+ al:"Uso frequente (mais de 2 vezes por semana) indica asma descontrolada: encaminhar. Ensine a técnica inalatória."},
+{id:"montelucaste",n:"Montelucaste",cl:"Antileucotrieno",r:"tv",tags:[],m:"Singulair",cm:["montelucaste"],single:true,
+ ind:"Asma (manutenção); rinite alérgica.",
+ pos:"15 anos ou mais: 10 mg à noite. 6 a 14 anos: 5 mg. 2 a 5 anos: 4 mg.",
+ ci:"Hipersensibilidade.",
+ al:"Alerta para alterações de humor, sono e comportamento (oriente a família)."},
+{id:"ambroxol",n:"Ambroxol",cl:"Mucolítico e expectorante",r:"mip",tags:[],m:"Mucosolvan",cm:["ambroxol"],single:true,
+ ind:"Tosse produtiva com secreção espessa.",
+ pos:"Adultos: 30 mg 2 a 3 vezes ao dia (xarope adulto ou comprimido).",
+ ci:"Hipersensibilidade; menores de 2 anos (conforme apresentação).",
+ al:"Hidratação ajuda a fluidificar a secreção. Febre alta, falta de ar ou tosse por mais de 3 semanas: encaminhar."},
+{id:"acetilcisteina",n:"Acetilcisteína",cl:"Mucolítico",r:"mip",tags:[],m:"Fluimucil",cm:["acetilcisteina"],single:true,
+ ind:"Secreção espessa em bronquite e outras doenças respiratórias.",
+ pos:"600 mg/dia (1 vez ao dia ou 200 mg 3 vezes ao dia).",
+ ci:"Úlcera péptica ativa; menores de 2 anos.",
+ al:"Cheiro de enxofre é normal. Cuidado em asmáticos (broncoespasmo)."},
+
+// ---------- Sistema nervoso central (Portaria 344/98) ----------
+{id:"sertralina",n:"Sertralina",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero"],m:"Zoloft",cm:["sertralina"],single:true,
+ ind:"Depressão; transtornos de ansiedade, pânico, TOC, TEPT, disforia pré-menstrual.",
+ pos:"50 mg/dia (25 a 200 mg/dia).",
+ ci:"Uso de IMAO (14 dias); uso de pimozida.",
+ al:"Efeito em 2 a 4 semanas; não suspender abruptamente. Náusea e insônia no início."},
+{id:"fluoxetina",n:"Fluoxetina",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero","inib2d6"],m:"Prozac",cm:["fluoxetina"],single:true,
+ ind:"Depressão; TOC; bulimia; disforia pré-menstrual.",
+ pos:"20 mg/dia pela manhã (20 a 60 mg; bulimia: 60 mg).",
+ ci:"Uso de IMAO (aguardar 5 semanas após a fluoxetina para iniciar IMAO); pimozida; tioridazina.",
+ al:"Meia-vida longa. Inibe o CYP2D6 (aumenta metoprolol, tramadol menos eficaz, tricíclicos)."},
+{id:"escitalopram",n:"Escitalopram",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero","qt"],m:"Lexapro",cm:["escitalopram"],single:true,
+ ind:"Depressão; ansiedade generalizada; pânico; fobia social; TOC.",
+ pos:"10 mg/dia (5 a 20 mg). Acima de 65 anos: máximo de 10 mg/dia.",
+ ci:"Uso de IMAO; prolongamento do QT conhecido; uso com outros fármacos que prolongam o QT.",
+ al:"Dose-dependente para QT."},
+{id:"paroxetina",n:"Paroxetina",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero","inib2d6","snc"],m:"Aropax, Pondera",cm:["paroxetina"],single:true,
+ ind:"Depressão; pânico; ansiedade; fobia social; TOC; TEPT.",
+ pos:"20 mg/dia pela manhã (10 a 50 mg).",
+ ci:"Uso de IMAO; tioridazina; pimozida.",
+ al:"Síndrome de descontinuação marcante: retirar gradualmente. Evitar na gestação."},
+{id:"amitriptilina",n:"Amitriptilina",cl:"Antidepressivo tricíclico",r:"c1",tags:["tric","sero","qt","snc"],m:"Amytril",cm:["amitriptilina"],single:true,
+ ind:"Depressão; dor neuropática; profilaxia de enxaqueca; fibromialgia.",
+ pos:"Dor e enxaqueca: 10 a 25 mg à noite (até 75 mg). Depressão: 75 a 150 mg/dia.",
+ ci:"Pós-infarto recente; arritmias; uso de IMAO; glaucoma de ângulo fechado.",
+ al:"Sedação, boca seca, constipação, ganho de peso. Evitar em idosos (anticolinérgico)."},
+{id:"bupropiona",n:"Bupropiona",cl:"Antidepressivo (inibidor da recaptação de dopamina e noradrenalina)",r:"c1",tags:["bup","inib2d6"],m:"Wellbutrin, Zyban",cm:["bupropiona"],single:true,
+ ind:"Depressão; tratamento do tabagismo.",
+ pos:"150 mg 1 vez ao dia por 3 dias, depois 150 mg 2 vezes ao dia (SR, intervalo mínimo de 8 h). XL: 150 a 300 mg 1 vez ao dia.",
+ ci:"Epilepsia ou histórico de convulsão; bulimia ou anorexia; retirada abrupta de álcool ou benzodiazepínicos; uso de IMAO.",
+ al:"Reduz o limiar convulsivo. Tomar a 2ª dose antes das 17 h (insônia)."},
+{id:"venlafaxina",n:"Venlafaxina",cl:"Antidepressivo (IRSN)",r:"c1",tags:["irsn","sero"],m:"Efexor",cm:["venlafaxina"],single:true,
+ ind:"Depressão; ansiedade generalizada; pânico; fobia social.",
+ pos:"XR: 75 mg/dia (37,5 a 225 mg) com alimento.",
+ ci:"Uso de IMAO.",
+ al:"Pode elevar a pressão arterial. Retirada gradual."},
+{id:"duloxetina",n:"Duloxetina",cl:"Antidepressivo (IRSN)",r:"c1",tags:["irsn","sero"],m:"Cymbalta",cm:["duloxetina"],single:true,
+ ind:"Depressão; ansiedade; dor neuropática diabética; fibromialgia; dor musculoesquelética crônica.",
+ pos:"30 a 60 mg 1 vez ao dia (máximo de 120 mg).",
+ ci:"Uso de IMAO; hepatopatia; insuficiência renal grave; glaucoma de ângulo fechado não controlado.",
+ al:"Náusea no início. Evitar em etilistas."},
+{id:"trazodona",n:"Trazodona",cl:"Antidepressivo (antagonista e inibidor da recaptação de serotonina)",r:"c1",tags:["sero","snc","trazo"],m:"Donaren",cm:["trazodona"],single:true,
+ ind:"Depressão (inclusive com insônia).",
+ pos:"50 a 150 mg à noite, com aumento gradual (depressão: até 300 a 400 mg/dia).",
+ ci:"Pós-infarto recente.",
+ al:"Hipotensão postural e sedação. Priapismo é raro, mas exige atendimento."},
+{id:"quetiapina",n:"Quetiapina",cl:"Antipsicótico atípico",r:"c1",tags:["antipsic","qt","snc"],m:"Seroquel",cm:["quetiapina"],single:true,
+ ind:"Esquizofrenia; transtorno bipolar; adjuvante na depressão.",
+ pos:"Varia muito por indicação (25 a 800 mg/dia), com titulação.",
+ ci:"Hipersensibilidade.",
+ al:"Sedação, ganho de peso, alterações metabólicas. Prolonga o QT."},
+{id:"risperidona",n:"Risperidona",cl:"Antipsicótico atípico",r:"c1",tags:["antipsic","snc"],m:"Risperdal",cm:["risperidona"],single:true,
+ ind:"Esquizofrenia; mania bipolar; irritabilidade no autismo.",
+ pos:"1 a 6 mg/dia, com titulação.",
+ ci:"Hipersensibilidade.",
+ al:"Hiperprolactinemia, efeitos extrapiramidais, ganho de peso."},
+{id:"litio",n:"Carbonato de lítio",cl:"Estabilizador do humor",r:"c1",tags:["litio"],m:"Carbolitium",cm:["litio"],single:true,
+ ind:"Transtorno bipolar (tratamento e prevenção).",
+ pos:"300 mg 2 a 3 vezes ao dia, ajustado pela litemia (0,6 a 1,2 mEq/L).",
+ ci:"Insuficiência renal grave; doença cardiovascular grave; desidratação; hiponatremia.",
+ al:"Janela terapêutica estreita. Sinais de toxicidade: tremor grosseiro, diarreia, vômitos, confusão. Manter hidratação e sal constantes."},
+{id:"carbamazepina",n:"Carbamazepina",cl:"Anticonvulsivante e estabilizador do humor",r:"c1",tags:["cbz","indutor"],m:"Tegretol",cm:["carbamazepina"],single:true,
+ ind:"Epilepsia; neuralgia do trigêmeo; transtorno bipolar.",
+ pos:"200 mg 1 a 2 vezes ao dia, com aumento até 800 a 1.200 mg/dia.",
+ ci:"Bloqueio AV; depressão medular; porfiria; uso de IMAO.",
+ al:"Potente indutor enzimático: reduz anticoncepcional, varfarina e muitos outros. Receita C1 de anticonvulsivante pode cobrir até 6 meses."},
+{id:"valproato",n:"Ácido valproico / divalproato de sódio",cl:"Anticonvulsivante e estabilizador do humor",r:"c1",tags:["vpa"],m:"Depakene, Depakote",cm:["valpro"],single:false,
+ ind:"Epilepsia; transtorno bipolar; profilaxia de enxaqueca.",
+ pos:"Inicial de 10 a 15 mg/kg/dia, com aumento conforme resposta e nível sérico (até 60 mg/kg/dia).",
+ ci:"Hepatopatia; doenças mitocondriais; gestação (alto risco teratogênico) salvo ausência de alternativa.",
+ al:"Mulheres em idade fértil exigem contracepção eficaz."},
+{id:"lamotrigina",n:"Lamotrigina",cl:"Anticonvulsivante e estabilizador do humor",r:"c1",tags:["ltg"],m:"Lamictal",cm:["lamotrigina"],single:true,
+ ind:"Epilepsia; prevenção de depressão no transtorno bipolar.",
+ pos:"Titulação lenta obrigatória (ex.: 25 mg/dia por 2 semanas, 50 mg/dia por 2 semanas, depois aumentos). Com valproato, metade das doses.",
+ ci:"Hipersensibilidade.",
+ al:"Erupção cutânea pode indicar Stevens-Johnson: suspender e procurar atendimento."},
+{id:"topiramato",n:"Topiramato",cl:"Anticonvulsivante",r:"c1",tags:["topi"],m:"Topamax",cm:["topiramato"],single:true,
+ ind:"Epilepsia; profilaxia de enxaqueca.",
+ pos:"Enxaqueca: 25 mg/dia com aumento até 50 mg 2 vezes ao dia. Epilepsia: até 200 a 400 mg/dia.",
+ ci:"Hipersensibilidade.",
+ al:"Parestesias, perda de peso, lentificação cognitiva, cálculo renal (hidratação)."},
+{id:"gabapentina",n:"Gabapentina",cl:"Anticonvulsivante (gabapentinoide)",r:"c1",tags:["gaba","snc"],m:"Neurontin",cm:["gabapentina"],single:true,
+ ind:"Dor neuropática; epilepsia (adjuvante).",
+ pos:"300 mg no 1º dia, 300 mg 2 vezes no 2º dia, 300 mg 3 vezes no 3º dia; manutenção de 900 a 3.600 mg/dia.",
+ ci:"Hipersensibilidade.",
+ al:"Sonolência e tontura. Ajustar em insuficiência renal."},
+{id:"pregabalina",n:"Pregabalina",cl:"Gabapentinoide",r:"c1",tags:["gaba","snc"],m:"Lyrica",cm:["pregabalina"],single:true,
+ ind:"Dor neuropática; fibromialgia; ansiedade generalizada; epilepsia (adjuvante).",
+ pos:"75 mg 2 vezes ao dia (150 a 600 mg/dia).",
+ ci:"Hipersensibilidade.",
+ al:"Potencial de abuso. Edema, ganho de peso, sonolência."},
+{id:"clonazepam",n:"Clonazepam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Rivotril",cm:["clonazepam"],single:true,
+ ind:"Transtorno de pânico; epilepsia; ansiedade.",
+ pos:"Pânico: 0,25 mg 2 vezes ao dia, até 1 a 2 mg/dia. Epilepsia: doses maiores, com titulação.",
+ ci:"Insuficiência respiratória grave; apneia do sono; miastenia gravis; glaucoma de ângulo fechado.",
+ al:"Dependência e tolerância. Não associar a álcool. Retirada gradual."},
+{id:"alprazolam",n:"Alprazolam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Frontal",cm:["alprazolam"],single:true,
+ ind:"Ansiedade; transtorno de pânico.",
+ pos:"0,25 a 0,5 mg 2 a 3 vezes ao dia (ansiedade: máximo de 4 mg/dia).",
+ ci:"Miastenia gravis; insuficiência respiratória grave; uso de cetoconazol ou itraconazol.",
+ al:"Meia-vida curta: maior risco de ansiedade rebote e dependência."},
+{id:"diazepam",n:"Diazepam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Valium",cm:["diazepam"],single:true,
+ ind:"Ansiedade; espasmo muscular; abstinência alcoólica; convulsões.",
+ pos:"2 a 10 mg 2 a 4 vezes ao dia.",
+ ci:"Insuficiência respiratória grave; apneia do sono; miastenia gravis.",
+ al:"Meia-vida longa: acúmulo em idosos (quedas)."},
+{id:"bromazepam",n:"Bromazepam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Lexotan",cm:["bromazepam"],single:true,
+ ind:"Ansiedade.",
+ pos:"1,5 a 3 mg até 3 vezes ao dia.",
+ ci:"Insuficiência respiratória grave; miastenia gravis; apneia do sono.",
+ al:"Dependência; evitar álcool."},
+{id:"zolpidem",n:"Zolpidem",cl:"Hipnótico não benzodiazepínico",r:"b1",tags:["z","snc"],m:"Stilnox",cm:["zolpidem"],single:true,
+ ind:"Insônia (uso de curto prazo).",
+ pos:"5 a 10 mg imediatamente ao deitar (mulheres e idosos: 5 mg). Sublingual de 5 mg para despertar noturno, conforme produto.",
+ ci:"Insuficiência respiratória ou hepática grave; apneia do sono; histórico de comportamento complexo durante o sono.",
+ al:"Desde 1º/8/2024 exige Notificação de Receita B (azul) em qualquer dose. Risco de sonambulismo e amnésia."},
+{id:"metilfenidato",n:"Metilfenidato",cl:"Psicoestimulante",r:"a3",tags:["estim"],m:"Ritalina, Concerta",cm:["metilfenidato"],single:true,
+ ind:"TDAH; narcolepsia.",
+ pos:"Liberação imediata: 5 a 10 mg 1 a 2 vezes ao dia com titulação (máximo de 60 mg/dia). Formas de liberação prolongada: 1 vez ao dia pela manhã.",
+ ci:"Glaucoma; hipertireoidismo; arritmias; ansiedade grave; uso de IMAO.",
+ al:"Insônia e perda de apetite. Tomar pela manhã."},
+{id:"lisdexanfetamina",n:"Lisdexanfetamina",cl:"Psicoestimulante",r:"a3",tags:["estim"],m:"Venvanse",cm:["lisdexanfetamina"],single:true,
+ ind:"TDAH; transtorno de compulsão alimentar.",
+ pos:"30 mg pela manhã, com aumentos até 70 mg/dia.",
+ ci:"Doença cardiovascular sintomática; hipertensão moderada/grave; glaucoma; hipertireoidismo; uso de IMAO.",
+ al:"Cápsula pode ser aberta e dissolvida em água ou iogurte."},
+{id:"sibutramina",n:"Sibutramina",cl:"Anorexígeno (inibidor da recaptação de serotonina e noradrenalina)",r:"b2",tags:["sibu"],m:"",cm:["sibutramina"],single:true,
+ ind:"Obesidade (IMC de 30 ou mais), como adjuvante.",
+ pos:"10 a 15 mg 1 vez ao dia pela manhã.",
+ ci:"Doença cardiovascular (coronariana, AVC, arritmia, insuficiência cardíaca); hipertensão não controlada; idade acima de 65 anos; transtornos alimentares; uso de antidepressivos serotoninérgicos.",
+ al:"Exige Termo de Responsabilidade do Prescritor junto da Notificação B2."},
+
+// ---------- Urologia, saúde sexual e hormônios ----------
+{id:"sildenafila",n:"Sildenafila",cl:"Inibidor da fosfodiesterase-5 (PDE5)",r:"tv",tags:["pde5"],m:"Viagra",cm:["sildenafila"],single:true,
+ ind:"Disfunção erétil; hipertensão arterial pulmonar (20 mg).",
+ pos:"Disfunção erétil: 50 mg (25 a 100 mg) cerca de 1 h antes, no máximo 1 vez ao dia.",
+ ci:"Uso de nitratos (isossorbida, nitroglicerina) ou riociguate; hipotensão grave; infarto ou AVC recente.",
+ al:"Pergunte sempre sobre nitratos. Ereção por mais de 4 h exige atendimento."},
+{id:"tadalafila",n:"Tadalafila",cl:"Inibidor da PDE5",r:"tv",tags:["pde5"],m:"Cialis",cm:["tadalafila"],single:true,
+ ind:"Disfunção erétil; hiperplasia prostática benigna.",
+ pos:"Sob demanda: 10 a 20 mg antes da atividade. Uso diário: 5 mg.",
+ ci:"Uso de nitratos; hipotensão grave; doença cardíaca que contraindique atividade sexual.",
+ al:"Efeito por até 36 h: nitrato só 48 h após a última dose."},
+{id:"finasterida",n:"Finasterida",cl:"Inibidor da 5-alfa-redutase",r:"tv",tags:[],m:"Propecia, Proscar",cm:["finasterida"],single:true,
+ ind:"Alopecia androgenética (1 mg); hiperplasia prostática benigna (5 mg).",
+ pos:"1 mg/dia (alopecia) ou 5 mg/dia (próstata).",
+ ci:"Mulheres e crianças. Gestantes não devem manusear comprimidos partidos.",
+ al:"Reduz o PSA em cerca de 50%: avisar o urologista. Efeitos sexuais possíveis."},
+{id:"tansulosina",n:"Tansulosina",cl:"Bloqueador alfa-1 adrenérgico",r:"tv",tags:["alfa"],m:"Secotex",cm:["tansulosina"],single:false,
+ ind:"Sintomas urinários da hiperplasia prostática; expulsão de cálculo ureteral (uso comum).",
+ pos:"0,4 mg 1 vez ao dia, após o café da manhã.",
+ ci:"Hipotensão ortostática; insuficiência hepática grave.",
+ al:"Tontura ao levantar. Avisar o oftalmologista antes de cirurgia de catarata."},
+{id:"coc",n:"Etinilestradiol + levonorgestrel (anticoncepcional oral)",cl:"Contraceptivo hormonal combinado",r:"tv",tags:["horm"],m:"Microvlar, Nordette",cm:["etinilestradiol","levonorgestrel"],single:false,
+ ind:"Contracepção.",
+ pos:"1 comprimido por dia, no mesmo horário, por 21 dias, com pausa de 7 dias (ou conforme o esquema do produto).",
+ ci:"Tabagismo acima de 35 anos; histórico de trombose; enxaqueca com aura; hipertensão não controlada; câncer de mama; doença hepática.",
+ al:"Esquecimento e indutores enzimáticos (carbamazepina) reduzem a eficácia."},
+{id:"levonorgestrel",n:"Levonorgestrel 1,5 mg (contracepção de emergência)",cl:"Contraceptivo de emergência",r:"tv",tags:["horm"],m:"Postinor",cm:["levonorgestrel"],single:true,
+ ind:"Prevenção da gravidez após relação desprotegida ou falha do método.",
+ pos:"1,5 mg em dose única, o quanto antes (até 72 h).",
+ ci:"Gravidez confirmada.",
+ al:"Não é método regular. Vômito em até 3 h exige nova dose. Com indutores enzimáticos, a eficácia cai."},
+
+// ---------- Outros ----------
+{id:"alopurinol",n:"Alopurinol",cl:"Inibidor da xantina oxidase (antigotoso)",r:"tv",tags:["alop"],m:"Zyloric",cm:["alopurinol"],single:true,
+ ind:"Gota crônica; hiperuricemia; prevenção de cálculo de ácido úrico.",
+ pos:"Iniciar 100 mg/dia e ajustar (geralmente 100 a 300 mg/dia; máximo de 800 mg).",
+ ci:"Crise aguda de gota (não iniciar durante a crise).",
+ al:"Erupção cutânea: suspender (risco de reação grave). Ajustar em insuficiência renal."},
+{id:"colchicina",n:"Colchicina",cl:"Antigotoso",r:"tv",tags:["colch"],m:"Colchis",cm:["colchicina"],single:true,
+ ind:"Crise de gota; profilaxia de crises; febre familiar do Mediterrâneo; pericardite.",
+ pos:"Crise: 1 mg seguido de 0,5 mg após 1 h. Profilaxia: 0,5 mg 1 a 2 vezes ao dia.",
+ ci:"Insuficiência renal ou hepática graves; uso com claritromicina e outros inibidores potentes do CYP3A4/P-gp em nefropatas ou hepatopatas.",
+ al:"Diarreia é o primeiro sinal de toxicidade."},
+{id:"isotretinoina",n:"Isotretinoína (oral)",cl:"Retinoide sistêmico",r:"c2",tags:["iso"],m:"Roacutan",cm:["isotretinoina"],single:true,
+ ind:"Acne grave ou resistente.",
+ pos:"0,5 a 1 mg/kg/dia, com refeição gordurosa.",
+ ci:"Gestação (teratogênico grave); lactação; uso de tetraciclinas; hipervitaminose A.",
+ al:"Duas formas de contracepção em mulheres em idade fértil. Ressecamento de pele e lábios; não doar sangue."},
+{id:"calcio",n:"Carbonato de cálcio",cl:"Suplemento de cálcio e antiácido",r:"mip",tags:["quel"],m:"",cm:["carbonato de calcio"],single:false,
+ ind:"Suplementação de cálcio; azia ocasional.",
+ pos:"Conforme o produto (em geral 500 a 1.000 mg de cálcio elementar por dia, com refeição).",
+ ci:"Hipercalcemia; cálculo renal de cálcio.",
+ al:"Separar de levotiroxina (4 h), quinolonas e tetraciclinas (2 h antes ou 6 h depois)."},
+{id:"ferro",n:"Sulfato ferroso",cl:"Suplemento de ferro",r:"mip",tags:["quel"],m:"",cm:["sulfato ferroso"],single:false,
+ ind:"Prevenção e tratamento de anemia ferropriva.",
+ pos:"Tratamento: 40 a 60 mg de ferro elementar 1 a 2 vezes ao dia, longe das refeições (ou com alimento, se houver intolerância).",
+ ci:"Hemocromatose; anemias não ferropênicas.",
+ al:"Fezes escuras são esperadas. Vitamina C melhora a absorção; leite, chá e café reduzem."},
+{id:"antiacido",n:"Hidróxido de alumínio + hidróxido de magnésio",cl:"Antiácido",r:"mip",tags:["quel"],m:"",cm:["hidroxido de aluminio"],single:false,
+ ind:"Azia e má digestão ocasionais.",
+ pos:"Conforme o produto, após as refeições e ao deitar.",
+ ci:"Insuficiência renal grave.",
+ al:"Separar de outros medicamentos por 2 h."}
+];
+
+/* Itens só para checagem de interação */
+const PSEUDO = [
+ {id:"alcool",n:"Bebida alcoólica",tags:["alcool"]}
+];
+
+/* Rótulos dos grupos usados nas regras */
+const TAGLBL = {aine:"anti-inflamatórios (AINEs)",anticoag:"anticoagulantes",antiplaq:"antiagregantes",raa:"IECA/BRA",ieca:"IECA",bra:"BRA",diur:"diuréticos",tiaz:"diuréticos tiazídicos",poupk:"espironolactona",litio:"lítio",isrs:"ISRS",irsn:"IRSN",cort:"corticoides",opioide:"opioides",benzo:"benzodiazepínicos",z:"zolpidem",gaba:"gabapentinoides",snc:"depressores do SNC",alcool:"álcool",metro:"metronidazol",paracetamol:"paracetamol",metf:"metformina",su:"sulfonilureias",tramadol:"tramadol",tric:"tricíclicos",trazo:"trazodona",sibu:"sibutramina",bup:"bupropiona",sero:"serotoninérgicos",pde5:"inibidores da PDE5",nitrato:"nitratos",alfa:"alfabloqueadores",inib3a4:"inibidores do CYP3A4",sinva:"sinvastatina",atorva:"atorvastatina",claritro:"claritromicina",flucon:"fluconazol",anlo:"anlodipino",varf:"varfarina",smx:"sulfametoxazol-trimetoprima",quino:"quinolonas",macro:"macrolídeos",levot:"levotiroxina",cbz:"carbamazepina",doac:"anticoagulantes diretos",clopi:"clopidogrel",omeeso:"omeprazol/esomeprazol",glp1:"agonistas de GLP-1",bb:"betabloqueadores",bbns:"betabloqueadores não seletivos",salbu:"salbutamol",quel:"cálcio, ferro e antiácidos",ibp:"IBPs",tetra:"tetraciclinas",qt:"fármacos que prolongam o QT",domp:"domperidona",horm:"contraceptivos hormonais",topi:"topiramato",ltg:"lamotrigina",vpa:"valproato",colch:"colchicina",iso:"isotretinoína",metoclo:"metoclopramida",antipsic:"antipsicóticos",inib2d6:"inibidores do CYP2D6",bb2d6:"betabloqueadores metabolizados pelo CYP2D6",aas:"AAS",dipirona:"dipirona",antidiab:"antidiabéticos",sglt2:"inibidores do SGLT2",tirz:"tirzepatida"};
+
+/* Regras de interação. sev: ci = contraindicada, g = grave, m = moderada */
+const RULES = [
+ {a:["pde5"],b:["nitrato"],sev:"ci",ef:"Hipotensão grave e potencialmente fatal.",cd:"Não usar juntos. Nitrato só 24 h após sildenafila e 48 h após tadalafila."},
+ {a:["sibu"],b:["sero"],sev:"ci",ef:"Síndrome serotoninérgica.",cd:"Associação contraindicada."},
+ {a:["sinva"],b:["claritro"],sev:"ci",ef:"Aumento acentuado da sinvastatina: miopatia e rabdomiólise.",cd:"Suspender a sinvastatina durante o antibiótico ou trocar o macrolídeo (ex.: azitromicina)."},
+ {a:["domp"],b:["inib3a4"],sev:"ci",ef:"Aumento da domperidona e risco de arritmia grave.",cd:"Associação contraindicada."},
+ {a:["iso"],b:["tetra"],sev:"ci",ef:"Hipertensão intracraniana (pseudotumor cerebral).",cd:"Associação contraindicada."},
+ {a:["aine"],b:["anticoag"],sev:"g",ef:"Risco elevado de sangramento, inclusive digestivo.",cd:"Evitar. Para dor ou febre, preferir paracetamol ou dipirona. Orientar sinais de sangramento."},
+ {a:["anticoag"],b:["antiplaq"],sev:"g",ef:"Risco elevado de sangramento.",cd:"Só com indicação médica expressa (ex.: pós-stent). Confirmar com o prescritor."},
+ {a:["opioide"],b:["benzo","z","gaba"],sev:"g",ef:"Sedação profunda e depressão respiratória.",cd:"Evitar; se prescritos juntos, menor dose e menor tempo. Alertar paciente e família."},
+ {a:["alcool"],b:["snc"],sev:"g",ef:"Depressão do SNC: sonolência, quedas, depressão respiratória.",cd:"Não consumir álcool durante o tratamento."},
+ {a:["alcool"],b:["metro"],sev:"g",ef:"Reação tipo dissulfiram: rubor, vômitos, taquicardia.",cd:"Sem álcool durante e por pelo menos 3 dias após o metronidazol."},
+ {a:["tramadol"],b:["isrs","irsn","tric","trazo","sibu"],sev:"g",ef:"Síndrome serotoninérgica e convulsões.",cd:"Evitar ou monitorar de perto; orientar sinais (agitação, tremor, febre, diarreia)."},
+ {a:["tramadol"],b:["bup"],sev:"g",ef:"Redução do limiar convulsivo.",cd:"Evitar a associação."},
+ {a:["aine"],b:["litio"],sev:"g",ef:"Aumento da litemia e toxicidade.",cd:"Evitar; se necessário, monitorar litemia. Paracetamol é alternativa."},
+ {a:["litio"],b:["raa","tiaz"],sev:"g",ef:"Aumento da litemia.",cd:"Monitorar litemia e sinais de toxicidade."},
+ {a:["ieca"],b:["bra"],sev:"g",ef:"Duplo bloqueio do SRAA: hipotensão, hipercalemia, lesão renal.",cd:"Evitar; confirmar com o prescritor."},
+ {a:["raa"],b:["poupk"],sev:"g",ef:"Hipercalemia.",cd:"Usada em insuficiência cardíaca com monitorização de potássio e função renal. Evitar suplementos de potássio."},
+ {a:["varf"],b:["smx","metro","flucon"],sev:"g",ef:"Aumento importante do INR e sangramento.",cd:"Evitar ou ajustar a varfarina com INR em poucos dias. Avisar o médico."},
+ {a:["doac"],b:["cbz"],sev:"g",ef:"Redução do anticoagulante e risco de trombose.",cd:"Evitar a associação."},
+ {a:["cbz"],b:["horm"],sev:"g",ef:"Falha do contraceptivo hormonal (indução enzimática).",cd:"Usar método não hormonal ou DIU. Na contracepção de emergência, o prescritor pode dobrar a dose."},
+ {a:["ltg"],b:["vpa"],sev:"g",ef:"O valproato dobra os níveis de lamotrigina: risco de erupção grave.",cd:"Exige titulação específica (metade das doses)."},
+ {a:["colch"],b:["claritro"],sev:"g",ef:"Toxicidade da colchicina, potencialmente fatal.",cd:"Evitar; contraindicada em insuficiência renal ou hepática."},
+ {a:["statin"],b:["claritro"],sev:"g",ef:"Aumento da estatina: risco de miopatia (atorvastatina).",cd:"Limitar a dose ou suspender durante o antibiótico."},
+ {a:["bbns"],b:["salbu"],sev:"g",ef:"Antagonismo do broncodilatador e broncoespasmo em asmáticos.",cd:"Evitar betabloqueador não seletivo em asma."},
+ {a:["aine"],b:["antiplaq"],sev:"m",ef:"Mais sangramento digestivo. O ibuprofeno pode reduzir o efeito antiagregante do AAS.",cd:"Tomar o AAS pelo menos 30 min antes do ibuprofeno. Considerar gastroproteção."},
+ {a:["aine"],b:["aine"],sev:"m",ef:"Duplicidade: sem ganho de efeito e mais toxicidade GI e renal.",cd:"Usar um AINE por vez."},
+ {a:["aine"],b:["raa"],sev:"m",ef:"Reduz o efeito anti-hipertensivo; risco renal e de hipercalemia. Com diurético junto, risco de lesão renal aguda.",cd:"Uso curto, hidratação, medir a pressão."},
+ {a:["aine"],b:["diur"],sev:"m",ef:"Reduz o efeito diurético e anti-hipertensivo; risco renal.",cd:"Uso curto; preferir paracetamol ou dipirona."},
+ {a:["aine"],b:["isrs","irsn"],sev:"m",ef:"Aumento do risco de sangramento digestivo.",cd:"Considerar gastroproteção ou analgésico alternativo."},
+ {a:["aine"],b:["cort"],sev:"m",ef:"Úlcera e sangramento digestivo.",cd:"Evitar; se necessário, gastroproteção."},
+ {a:["dipirona"],b:["aas"],sev:"m",ef:"A dipirona pode reduzir o efeito antiagregante do AAS em dose baixa.",cd:"Tomar o AAS pelo menos 30 min antes da dipirona."},
+ {a:["sero"],b:["sero"],sev:"m",ef:"Risco de síndrome serotoninérgica.",cd:"Confirmar com o prescritor; orientar sinais de alerta."},
+ {a:["snc"],b:["snc"],sev:"m",ef:"Sedação aditiva, quedas (idosos), prejuízo ao dirigir.",cd:"Orientar; atenção redobrada em idosos."},
+ {a:["alcool"],b:["paracetamol"],sev:"m",ef:"Hepatotoxicidade em consumo crônico de álcool.",cd:"Limitar o paracetamol a 2 g/dia em etilistas."},
+ {a:["alcool"],b:["metf"],sev:"m",ef:"Risco de acidose lática com consumo excessivo.",cd:"Evitar excesso de álcool."},
+ {a:["alcool"],b:["su"],sev:"m",ef:"Hipoglicemia.",cd:"Evitar álcool, sobretudo em jejum."},
+ {a:["alcool"],b:["aine"],sev:"m",ef:"Lesão e sangramento gástrico.",cd:"Evitar álcool durante o uso."},
+ {a:["pde5"],b:["alfa"],sev:"m",ef:"Hipotensão postural.",cd:"Iniciar com dose baixa e com o alfabloqueador estável."},
+ {a:["pde5"],b:["inib3a4"],sev:"m",ef:"Aumento do nível da sildenafila ou tadalafila.",cd:"Reduzir a dose (ex.: sildenafila 25 mg)."},
+ {a:["sinva"],b:["anlo"],sev:"m",ef:"Aumento da sinvastatina: risco de miopatia.",cd:"Limitar a sinvastatina a 20 mg/dia."},
+ {a:["statin"],b:["flucon"],sev:"m",ef:"Aumento da estatina (sinvastatina e atorvastatina).",cd:"Uso curto do fluconazol costuma ser tolerado; orientar dor muscular."},
+ {a:["varf"],b:["quino","macro","paracetamol","levot","isrs"],sev:"m",ef:"Aumento do INR ou do risco de sangramento.",cd:"Monitorar INR ao iniciar ou suspender. Paracetamol: atenção acima de 2 g/dia por vários dias."},
+ {a:["varf"],b:["cbz"],sev:"m",ef:"Redução do efeito da varfarina.",cd:"Monitorar INR."},
+ {a:["anticoag"],b:["isrs","irsn"],sev:"m",ef:"Aumento do risco de sangramento.",cd:"Orientar sinais de sangramento."},
+ {a:["clopi"],b:["omeeso"],sev:"m",ef:"Redução da ativação do clopidogrel.",cd:"Preferir pantoprazol."},
+ {a:["raa"],b:["smx"],sev:"m",ef:"Hipercalemia.",cd:"Atenção em idosos e nefropatas."},
+ {a:["su"],b:["inib3a4","smx","quino"],sev:"m",ef:"Hipoglicemia (e disglicemia com quinolonas).",cd:"Orientar monitorização da glicemia."},
+ {a:["su"],b:["glp1"],sev:"m",ef:"Hipoglicemia.",cd:"O prescritor costuma reduzir a sulfonilureia."},
+ {a:["bb"],b:["su"],sev:"m",ef:"O betabloqueador mascara os sinais de hipoglicemia (tremor, taquicardia).",cd:"Orientar a reconhecer a sudorese e medir a glicemia."},
+ {a:["levot"],b:["quel"],sev:"m",ef:"Redução da absorção da levotiroxina.",cd:"Separar por pelo menos 4 h."},
+ {a:["levot"],b:["ibp"],sev:"m",ef:"Possível redução da absorção da levotiroxina.",cd:"Monitorar o TSH."},
+ {a:["quino","tetra"],b:["quel"],sev:"m",ef:"Quelação: o antibiótico perde absorção.",cd:"Tomar o antibiótico 2 h antes ou 6 h depois."},
+ {a:["qt"],b:["qt"],sev:"m",ef:"Prolongamento aditivo do intervalo QT e risco de arritmia.",cd:"Evitar em cardiopatas, idosos e com distúrbio de potássio ou magnésio."},
+ {a:["topi"],b:["horm"],sev:"m",ef:"Topiramato em doses de 200 mg/dia ou mais reduz o contraceptivo.",cd:"Considerar método adicional."},
+ {a:["ltg"],b:["horm"],sev:"m",ef:"O estrogênio reduz os níveis de lamotrigina.",cd:"Avisar o neurologista."},
+ {a:["tirz"],b:["horm"],sev:"m",ef:"A tirzepatida reduz a absorção do anticoncepcional oral.",cd:"Método adicional por 4 semanas após o início e após cada aumento de dose."},
+ {a:["metoclo"],b:["antipsic"],sev:"m",ef:"Efeitos extrapiramidais.",cd:"Evitar a associação."},
+ {a:["inib2d6"],b:["bb2d6"],sev:"m",ef:"Aumento do betabloqueador: bradicardia e hipotensão.",cd:"Monitorar a frequência cardíaca."},
+ {a:["cort"],b:["quino"],sev:"m",ef:"Tendinite e ruptura de tendão.",cd:"Orientar a suspender e procurar o médico se houver dor no tendão."},
+ {a:["cort"],b:["antidiab"],sev:"m",ef:"O corticoide eleva a glicemia.",cd:"Monitorar a glicemia durante o uso."},
+ {a:["sglt2"],b:["diur"],sev:"m",ef:"Desidratação e hipotensão.",cd:"Orientar hidratação."}
+];
+
+/* Tipos de receita */
+const REC = {
+ mip:{t:"Isento de prescrição (MIP)",cor:"mip",doc:"Sem receita",ret:"Não há retenção",val:"Não se aplica",qtd:"Não se aplica",obs:"Indicação farmacêutica permitida, com orientação."},
+ tv:{t:"Venda sob prescrição (tarja vermelha)",cor:"tv",doc:"Receita simples",ret:"Sem retenção",val:"A norma federal não fixa prazo; avalie a data e a coerência do tratamento (normas locais podem fixar)",qtd:"Conforme prescrição",obs:"A receita volta com o paciente."},
+ tvmip:{t:"Tarja vermelha ou MIP, conforme a apresentação",cor:"tv",doc:"Depende da apresentação",ret:"Sem retenção",val:"Ver receita simples",qtd:"Conforme prescrição",obs:"Algumas concentrações e embalagens são isentas de prescrição. Confira a tarja na embalagem ou na coluna Tarja da tabela CMED."},
+ atm:{t:"Antimicrobiano com retenção (RDC 471/2021, IN 360/2025)",cor:"tv",doc:"Receituário comum em 2 vias",ret:"Retém a 2ª via; a 1ª volta ao paciente",val:"10 dias da emissão; em tratamento prolongado com uso contínuo indicado, aquisições em até 90 dias",qtd:"O tratamento prescrito (inclusive fracionado)",obs:"Escriturar a dispensação conforme a RDC 471/2021."},
+ glp1:{t:"Agonista de GLP-1 com retenção (RDC 973/2025, IN 360/2025)",cor:"tv",doc:"Receituário comum em 2 vias",ret:"Retém a 2ª via; a 1ª volta ao paciente",val:"90 dias da emissão",qtd:"Uso contínuo: até 30 dias de tratamento por aquisição, dentro dos 90 dias",obs:"Registro no SNGPC. Vale para semaglutida, liraglutida, dulaglutida, tirzepatida e lixisenatida."},
+ c1:{t:"Lista C1, Portaria 344/98",cor:"c",doc:"Receita de Controle Especial (branca, 2 vias)",ret:"Retém a 1ª via",val:"30 dias da emissão, em todo o país",qtd:"Até 60 dias de tratamento (anticonvulsivantes e antiparkinsonianos: até 6 meses); até 5 ampolas",obs:"Escrituração no SNGPC."},
+ rce_a2:{t:"Lista A2 (adendo), Portaria 344/98",cor:"c",doc:"Receita de Controle Especial (branca, 2 vias)",ret:"Retém a 1ª via",val:"30 dias da emissão, em todo o país",qtd:"Até 30 dias de tratamento (confira a orientação da Vigilância Sanitária local)",obs:"Preparações de tramadol até 100 mg por unidade e de codeína até 100 mg por unidade (ou 2,5% em formas indivisíveis). Acima disso, Notificação A."},
+ b1:{t:"Lista B1, Portaria 344/98 (psicotrópicos)",cor:"b",doc:"Notificação de Receita B (azul) + receita",ret:"Retém a notificação",val:"30 dias da emissão, em todo o país (Lei 13.732/2018)",qtd:"Até 60 dias de tratamento; até 5 ampolas",obs:"Tarja preta. Escrituração no SNGPC."},
+ b2:{t:"Lista B2, Portaria 344/98 (anorexígenos)",cor:"b",doc:"Notificação de Receita B2 (azul) + Termo de Responsabilidade do Prescritor",ret:"Retém a notificação e o termo",val:"30 dias da emissão",qtd:"Até 30 dias de tratamento",obs:"Tarja preta."},
+ a3:{t:"Lista A3, Portaria 344/98 (psicotrópicos)",cor:"a",doc:"Notificação de Receita A (amarela) + receita",ret:"Retém a notificação",val:"30 dias da emissão, em todo o país",qtd:"Até 30 dias de tratamento; até 5 ampolas",obs:"Tarja preta. Talonário fornecido pela Vigilância Sanitária."},
+ c2:{t:"Lista C2, Portaria 344/98 (retinoides sistêmicos)",cor:"c",doc:"Notificação de Receita Especial para Retinoides (branca) + Termo de Consentimento",ret:"Retém a notificação",val:"30 dias da emissão (algumas vigilâncias estaduais fixam prazo menor para mulheres em idade fértil)",qtd:"Até 30 dias de tratamento",obs:"Confira a regra da sua Vigilância Sanitária."}
+};
+
+/* Ampliação 1: dor, neurologia, psiquiatria, anti-infecciosos */
+REC.a1={t:"Lista A1, Portaria 344/98 (entorpecentes)",cor:"a",doc:"Notificação de Receita A (amarela) + receita",ret:"Retém a notificação",val:"30 dias da emissão, em todo o país",qtd:"Até 30 dias de tratamento; até 5 ampolas",obs:"Tarja preta. Talonário fornecido pela Vigilância Sanitária."};
+
+DRUGS.push(
+// ---------- Dor, enxaqueca e musculoesquelético ----------
+{id:"neosaldina",n:"Dipirona + isometepteno + cafeína",cl:"Analgésico para cefaleia (associação)",r:"mip",tags:["dipirona"],m:"Neosaldina",cm:["isometepteno"],single:false,
+ ind:"Cefaleia tensional e enxaqueca leve.",
+ pos:"1 a 2 drágeas; repetir a cada 6 h se necessário (máximo de 6 drágeas/dia).",
+ ci:"As da dipirona; hipertensão grave; glaucoma; uso de IMAO.",
+ al:"Uso frequente (mais de 10 dias por mês) causa cefaleia por abuso de analgésico: encaminhar."},
+{id:"dorflex",n:"Dipirona + orfenadrina + cafeína",cl:"Analgésico e relaxante muscular (associação)",r:"mip",tags:["dipirona","snc"],m:"Dorflex",cm:["orfenadrina"],single:false,
+ ind:"Dor muscular e cefaleia tensional.",
+ pos:"1 a 2 comprimidos 3 a 4 vezes ao dia.",
+ ci:"As da dipirona; glaucoma; obstrução do colo vesical ou intestinal; miastenia gravis.",
+ al:"Orfenadrina é anticolinérgica: cuidado em idosos e com prostatismo."},
+{id:"carisoprodol",n:"Carisoprodol (associações: diclofenaco + paracetamol + cafeína)",cl:"Relaxante muscular em associação com AINE",r:"tv",tags:["aine","paracetamol","snc"],m:"Torsilax, Tandrilax, Mioflex A",cm:["carisoprodol"],single:false,
+ ind:"Dor musculoesquelética aguda com contratura.",
+ pos:"1 comprimido a cada 12 h (até 3 vezes ao dia), por poucos dias.",
+ ci:"As dos AINEs e do paracetamol; porfiria; menores de 14 anos.",
+ al:"O carisoprodol entrou na Lista B1 pela RDC 999/2025, mas o Adendo 16 mantém os medicamentos prontos como venda sob prescrição simples, sem notificação azul nem SNGPC. Contém AINE e paracetamol: evitar duplicidade."},
+{id:"tizanidina",n:"Tizanidina",cl:"Relaxante muscular de ação central (agonista alfa-2)",r:"tv",tags:["tiza","snc"],m:"Sirdalud",cm:["tizanidina"],single:true,
+ ind:"Espasticidade; espasmo muscular doloroso.",
+ pos:"2 a 4 mg até 3 vezes ao dia (máximo de 36 mg/dia), com aumento gradual.",
+ ci:"Uso de ciprofloxacino ou fluvoxamina; insuficiência hepática grave.",
+ al:"Hipotensão e sonolência. Não suspender abruptamente após uso prolongado."},
+{id:"baclofeno",n:"Baclofeno",cl:"Relaxante muscular (agonista GABA-B)",r:"tv",tags:["snc"],m:"Lioresal",cm:["baclofeno"],single:true,
+ ind:"Espasticidade (esclerose múltipla, lesão medular, paralisia cerebral).",
+ pos:"5 mg 3 vezes ao dia, com aumentos a cada 3 dias até 30 a 75 mg/dia (máximo de 80 mg/dia).",
+ ci:"Úlcera péptica ativa.",
+ al:"Retirada abrupta pode causar convulsões e alucinações."},
+{id:"etoricoxibe",n:"Etoricoxibe",cl:"AINE (inibidor seletivo da COX-2)",r:"tv",tags:["aine"],m:"Arcoxia",cm:["etoricoxibe"],single:true,
+ ind:"Osteoartrite, artrite reumatoide, gota aguda, dor pós-operatória odontológica.",
+ pos:"Osteoartrite: 30 a 60 mg 1 vez ao dia. Artrite reumatoide: 90 mg. Gota aguda: 120 mg 1 vez ao dia por até 8 dias.",
+ ci:"Hipertensão não controlada; doença cardíaca isquêmica, arterial periférica ou cerebrovascular; insuficiência cardíaca.",
+ al:"Medir a pressão: eleva mais a PA que outros coxibes."},
+{id:"piroxicam",n:"Piroxicam",cl:"AINE",r:"tv",tags:["aine"],m:"Feldene",cm:["piroxicam"],single:true,
+ ind:"Osteoartrite, artrite reumatoide, dor aguda.",
+ pos:"20 mg 1 vez ao dia.",
+ ci:"As dos AINEs; 3º trimestre.",
+ al:"Meia-vida longa e alto risco GI: não indicado como primeira escolha em idosos."},
+{id:"cetorolaco",n:"Cetorolaco de trometamol",cl:"AINE potente",r:"tv",tags:["aine"],m:"Toragesic",cm:["cetorolaco"],single:true,
+ ind:"Dor aguda moderada a intensa, por curto prazo.",
+ pos:"Sublingual: 10 mg a cada 6 a 8 h (máximo de 40 mg/dia), por no máximo 5 dias.",
+ ci:"Úlcera ou sangramento; insuficiência renal; risco de sangramento; gestação e lactação; menores de 16 anos.",
+ al:"Respeitar o limite de 5 dias."},
+{id:"mefenamico",n:"Ácido mefenâmico",cl:"AINE",r:"tv",tags:["aine"],m:"Ponstan",cm:["acido mefenamico"],single:true,
+ ind:"Cólica menstrual; dor leve a moderada.",
+ pos:"500 mg 3 vezes ao dia, por até 7 dias.",
+ ci:"As dos AINEs; doença inflamatória intestinal.",
+ al:"Diarreia: suspender."},
+{id:"sumatriptana",n:"Sumatriptana",cl:"Antienxaqueca (triptana)",r:"tv",tags:["triptana","sero"],m:"Sumax, Imigran",cm:["sumatriptana"],single:false,
+ ind:"Crise de enxaqueca com ou sem aura.",
+ pos:"50 a 100 mg no início da dor; pode repetir após 2 h (máximo de 200 mg/24 h).",
+ ci:"Doença coronariana, AVC, hipertensão não controlada; ergotamínicos nas últimas 24 h; uso de IMAO.",
+ al:"Não é preventivo. Mais de 2 crises por semana: encaminhar para profilaxia."},
+{id:"rizatriptana",n:"Rizatriptana",cl:"Antienxaqueca (triptana)",r:"tv",tags:["triptana","sero"],m:"Maxalt",cm:["rizatriptana"],single:true,
+ ind:"Crise de enxaqueca.",
+ pos:"10 mg; pode repetir após 2 h (máximo de 30 mg/24 h). Com propranolol: 5 mg (máximo de 15 mg/24 h).",
+ ci:"Doença coronariana; hipertensão não controlada; uso de IMAO ou ergotamínicos.",
+ al:"Comprimido orodispersível dissolve na língua."},
+{id:"flunarizina",n:"Flunarizina",cl:"Bloqueador de canal de cálcio (antivertiginoso e antienxaqueca)",r:"tv",tags:["snc"],m:"Vertix",cm:["flunarizina"],single:true,
+ ind:"Profilaxia de enxaqueca; vertigem.",
+ pos:"10 mg à noite (5 mg acima de 65 anos).",
+ ci:"Depressão; doença de Parkinson ou outros extrapiramidais.",
+ al:"Sonolência, ganho de peso, depressão e parkinsonismo em idosos com uso prolongado."},
+{id:"cinarizina",n:"Cinarizina",cl:"Antivertiginoso",r:"tv",tags:["snc"],m:"Stugeron",cm:["cinarizina"],single:true,
+ ind:"Vertigem, labirintopatias, cinetose.",
+ pos:"25 mg 3 vezes ao dia ou 75 mg 1 vez ao dia.",
+ ci:"Parkinsonismo.",
+ al:"Mesmos riscos extrapiramidais da flunarizina em idosos."},
+{id:"betaistina",n:"Betaistina",cl:"Antivertiginoso (análogo da histamina)",r:"tv",tags:[],m:"Betaserc, Labirin",cm:["betaistina"],single:true,
+ ind:"Doença de Ménière; vertigem.",
+ pos:"24 mg 2 vezes ao dia ou 16 mg 3 vezes ao dia, com alimento.",
+ ci:"Feocromocitoma.",
+ al:"Cautela em asmáticos e úlcera péptica."},
+{id:"tramadol_para",n:"Tramadol + paracetamol",cl:"Analgésico opioide em associação",r:"rce_a2",tags:["opioide","tramadol","snc","sero","paracetamol"],m:"Ultracet",cm:["tramadol","paracetamol"],single:false,
+ ind:"Dor aguda moderada a intensa.",
+ pos:"37,5/325 mg: 2 comprimidos a cada 4 a 6 h se necessário (máximo de 8 comprimidos/dia).",
+ ci:"As do tramadol e do paracetamol.",
+ al:"Não somar com outros produtos com paracetamol."},
+{id:"morfina",n:"Morfina",cl:"Analgésico opioide forte",r:"a1",tags:["opioide","snc"],m:"Dimorf",cm:["morfina"],single:true,
+ ind:"Dor intensa (oncológica, pós-operatória, crônica refratária).",
+ pos:"Oral de liberação imediata: 10 a 30 mg a cada 4 h, ajustado à dor. Formas LC a cada 12 h.",
+ ci:"Depressão respiratória; asma aguda; íleo paralítico; uso de IMAO.",
+ al:"Prescreva laxante junto (constipação constante). Orientar sinais de sedação excessiva."},
+
+// ---------- Psiquiatria e neurologia ----------
+{id:"nortriptilina",n:"Nortriptilina",cl:"Antidepressivo tricíclico",r:"c1",tags:["tric","sero","qt","snc"],m:"Pamelor",cm:["nortriptilina"],single:true,
+ ind:"Depressão; dor neuropática; tabagismo (2ª linha).",
+ pos:"25 mg à noite, com aumento até 75 a 150 mg/dia.",
+ ci:"Pós-infarto recente; uso de IMAO.",
+ al:"Menos anticolinérgica que a amitriptilina, mas exige os mesmos cuidados."},
+{id:"clomipramina",n:"Clomipramina",cl:"Antidepressivo tricíclico",r:"c1",tags:["tric","sero","qt","snc"],m:"Anafranil",cm:["clomipramina"],single:true,
+ ind:"Depressão; TOC; pânico; ejaculação precoce (uso comum).",
+ pos:"25 mg/dia, com aumento até 100 a 250 mg/dia.",
+ ci:"Pós-infarto recente; uso de IMAO.",
+ al:"Mais serotoninérgica dos tricíclicos."},
+{id:"imipramina",n:"Imipramina",cl:"Antidepressivo tricíclico",r:"c1",tags:["tric","sero","qt","snc"],m:"Tofranil",cm:["imipramina"],single:true,
+ ind:"Depressão; enurese noturna infantil.",
+ pos:"25 mg 1 a 3 vezes ao dia (até 150 a 200 mg/dia).",
+ ci:"Pós-infarto recente; uso de IMAO.",
+ al:"Toxicidade cardíaca em superdose."},
+{id:"mirtazapina",n:"Mirtazapina",cl:"Antidepressivo noradrenérgico e serotoninérgico específico",r:"c1",tags:["sero","snc"],m:"Remeron",cm:["mirtazapina"],single:true,
+ ind:"Depressão (especialmente com insônia e inapetência).",
+ pos:"15 mg à noite, até 45 mg/dia.",
+ ci:"Uso de IMAO.",
+ al:"Sonolência e aumento de apetite e peso."},
+{id:"desvenlafaxina",n:"Desvenlafaxina",cl:"Antidepressivo (IRSN)",r:"c1",tags:["irsn","sero"],m:"Pristiq",cm:["desvenlafaxina"],single:true,
+ ind:"Depressão.",
+ pos:"50 mg 1 vez ao dia.",
+ ci:"Uso de IMAO.",
+ al:"Pode elevar a pressão. Retirada gradual."},
+{id:"vortioxetina",n:"Vortioxetina",cl:"Antidepressivo multimodal",r:"c1",tags:["sero"],m:"Brintellix",cm:["vortioxetina"],single:true,
+ ind:"Depressão.",
+ pos:"10 mg 1 vez ao dia (5 a 20 mg).",
+ ci:"Uso de IMAO.",
+ al:"Náusea no início é o efeito mais comum."},
+{id:"citalopram",n:"Citalopram",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero","qt"],m:"Cipramil",cm:["citalopram"],single:true,
+ ind:"Depressão; pânico.",
+ pos:"20 mg/dia (máximo de 40 mg; acima de 60 anos, máximo de 20 mg).",
+ ci:"Uso de IMAO; prolongamento do QT.",
+ al:"Prolonga o QT de forma dose-dependente."},
+{id:"fluvoxamina",n:"Fluvoxamina",cl:"Antidepressivo (ISRS)",r:"c1",tags:["isrs","sero","inib1a2"],m:"Luvox",cm:["fluvoxamina"],single:true,
+ ind:"Depressão; TOC.",
+ pos:"50 mg à noite, até 100 a 300 mg/dia.",
+ ci:"Uso de IMAO, tizanidina, ramelteona, pimozida.",
+ al:"Potente inibidor do CYP1A2 e 2C19."},
+{id:"agomelatina",n:"Agomelatina",cl:"Antidepressivo melatoninérgico",r:"c1",tags:[],m:"Valdoxan",cm:["agomelatina"],single:true,
+ ind:"Depressão.",
+ pos:"25 mg ao deitar (até 50 mg).",
+ ci:"Insuficiência hepática; uso de fluvoxamina ou ciprofloxacino.",
+ al:"Exige exames de função hepática periódicos."},
+{id:"olanzapina",n:"Olanzapina",cl:"Antipsicótico atípico",r:"c1",tags:["antipsic","snc"],m:"Zyprexa",cm:["olanzapina"],single:true,
+ ind:"Esquizofrenia; transtorno bipolar.",
+ pos:"5 a 20 mg 1 vez ao dia.",
+ ci:"Glaucoma de ângulo fechado.",
+ al:"Ganho de peso e alterações metabólicas importantes."},
+{id:"aripiprazol",n:"Aripiprazol",cl:"Antipsicótico atípico",r:"c1",tags:["antipsic"],m:"Abilify, Aristab",cm:["aripiprazol"],single:true,
+ ind:"Esquizofrenia; transtorno bipolar; adjuvante na depressão; irritabilidade no autismo.",
+ pos:"10 a 15 mg 1 vez ao dia (2 a 30 mg conforme a indicação).",
+ ci:"Hipersensibilidade.",
+ al:"Acatisia é comum. Pode causar comportamento compulsivo (jogo, compras)."},
+{id:"haloperidol",n:"Haloperidol",cl:"Antipsicótico típico",r:"c1",tags:["antipsic","qt","snc"],m:"Haldol",cm:["haloperidol"],single:true,
+ ind:"Psicoses; agitação; delirium; tiques.",
+ pos:"0,5 a 5 mg 2 a 3 vezes ao dia, conforme o quadro. Decanoato: injeção mensal.",
+ ci:"Doença de Parkinson; depressão do SNC grave.",
+ al:"Efeitos extrapiramidais frequentes."},
+{id:"clorpromazina",n:"Clorpromazina",cl:"Antipsicótico típico",r:"c1",tags:["antipsic","qt","snc"],m:"Amplictil",cm:["clorpromazina"],single:true,
+ ind:"Psicoses; agitação; soluço refratário; náuseas.",
+ pos:"25 a 100 mg 1 a 3 vezes ao dia, conforme o quadro.",
+ ci:"Depressão do SNC; glaucoma de ângulo fechado.",
+ al:"Hipotensão postural e fotossensibilidade."},
+{id:"levomepromazina",n:"Levomepromazina",cl:"Antipsicótico típico sedativo",r:"c1",tags:["antipsic","snc"],m:"Neozine",cm:["levomepromazina"],single:true,
+ ind:"Psicoses; agitação; insônia em psiquiatria; dor em cuidados paliativos.",
+ pos:"Gotas ou comprimidos: 25 a 100 mg/dia em doses divididas, conforme o quadro.",
+ ci:"Glaucoma; retenção urinária; depressão do SNC.",
+ al:"Sedação e hipotensão marcantes."},
+{id:"lorazepam",n:"Lorazepam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Lorax",cm:["lorazepam"],single:true,
+ ind:"Ansiedade; insônia associada à ansiedade.",
+ pos:"1 a 2 mg 2 a 3 vezes ao dia (máximo de 10 mg/dia).",
+ ci:"Miastenia gravis; insuficiência respiratória grave; apneia do sono.",
+ al:"Boa opção em hepatopatas e idosos (sem metabólito ativo), mas com os mesmos riscos de dependência."},
+{id:"clobazam",n:"Clobazam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Frisium, Urbanil",cm:["clobazam"],single:true,
+ ind:"Ansiedade; epilepsia (adjuvante).",
+ pos:"10 a 30 mg/dia (até 60 mg em epilepsia).",
+ ci:"Miastenia gravis; insuficiência respiratória grave.",
+ al:"Dependência e tolerância."},
+{id:"cloxazolam",n:"Cloxazolam",cl:"Benzodiazepínico",r:"b1",tags:["benzo","snc"],m:"Olcadil",cm:["cloxazolam"],single:true,
+ ind:"Ansiedade.",
+ pos:"1 a 8 mg/dia.",
+ ci:"Miastenia gravis; insuficiência respiratória grave.",
+ al:"Dependência; evitar álcool."},
+{id:"midazolam",n:"Midazolam (oral)",cl:"Benzodiazepínico de ação curta",r:"b1",tags:["benzo","snc","sub3a4"],m:"Dormonid",cm:["midazolam"],single:true,
+ ind:"Insônia de curto prazo; sedação pré-procedimento.",
+ pos:"7,5 a 15 mg ao deitar.",
+ ci:"Uso de inibidores potentes do CYP3A4; insuficiência respiratória grave.",
+ al:"Amnésia anterógrada. Inibidores do CYP3A4 aumentam muito o efeito."},
+{id:"modafinila",n:"Modafinila",cl:"Promotor da vigília",r:"b1",tags:["indutor3a4"],m:"Stavigile",cm:["modafinila"],single:true,
+ ind:"Narcolepsia; sonolência excessiva por apneia do sono ou trabalho em turnos.",
+ pos:"100 a 200 mg pela manhã (até 400 mg).",
+ ci:"Hipertensão moderada a grave não controlada; arritmias.",
+ al:"Reduz a eficácia de anticoncepcional hormonal: método adicional até 2 meses após parar."},
+{id:"hidroxizina",n:"Hidroxizina",cl:"Anti-histamínico H1 de 1ª geração (ansiolítico e antipruriginoso)",r:"tv",tags:["snc","qt"],m:"Hixizine",cm:["hidroxizina"],single:true,
+ ind:"Prurido; urticária; ansiedade leve.",
+ pos:"25 mg 3 a 4 vezes ao dia (máximo de 100 mg/dia em adultos; 50 mg em idosos).",
+ ci:"Prolongamento do QT; porfiria; gestação inicial.",
+ al:"Sedação importante."},
+{id:"prometazina",n:"Prometazina",cl:"Anti-histamínico H1 de 1ª geração (fenotiazínico)",r:"tv",tags:["snc","qt"],m:"Fenergan",cm:["prometazina"],single:true,
+ ind:"Alergias; náuseas; sedação; cinetose.",
+ pos:"25 mg à noite ou 12,5 a 25 mg até 3 vezes ao dia.",
+ ci:"Menores de 2 anos (depressão respiratória fatal); coma; uso de IMAO.",
+ al:"Sedação e efeito anticolinérgico."},
+{id:"oxcarbazepina",n:"Oxcarbazepina",cl:"Anticonvulsivante",r:"c1",tags:["indutor3a4"],m:"Trileptal",cm:["oxcarbazepina"],single:true,
+ ind:"Epilepsia focal; neuralgia do trigêmeo (uso comum).",
+ pos:"300 mg 2 vezes ao dia, com aumento até 600 a 2.400 mg/dia.",
+ ci:"Bloqueio AV.",
+ al:"Hiponatremia (idosos, diuréticos). Reduz anticoncepcional hormonal."},
+{id:"levetiracetam",n:"Levetiracetam",cl:"Anticonvulsivante",r:"c1",tags:[],m:"Keppra",cm:["levetiracetam"],single:true,
+ ind:"Epilepsia (focal, generalizada, mioclônica).",
+ pos:"500 mg 2 vezes ao dia, até 3.000 mg/dia.",
+ ci:"Hipersensibilidade.",
+ al:"Irritabilidade e alterações de humor. Ajustar em insuficiência renal. Poucas interações."},
+{id:"fenitoina",n:"Fenitoína",cl:"Anticonvulsivante",r:"c1",tags:["cbz","indutor3a4"],m:"Hidantal",cm:["fenitoina"],single:true,
+ ind:"Epilepsia (crises focais e tônico-clônicas).",
+ pos:"100 mg 3 vezes ao dia (ajuste por nível sérico).",
+ ci:"Bradicardia sinusal; bloqueio AV.",
+ al:"Janela estreita, hiperplasia gengival, indutor enzimático potente."},
+{id:"fenobarbital",n:"Fenobarbital",cl:"Anticonvulsivante (barbitúrico)",r:"b1",tags:["cbz","indutor3a4","snc"],m:"Gardenal",cm:["fenobarbital"],single:true,
+ ind:"Epilepsia; convulsão neonatal.",
+ pos:"50 a 100 mg à noite (até 300 mg/dia).",
+ ci:"Porfiria; insuficiência respiratória grave.",
+ al:"Sedação; indutor enzimático potente (reduz anticoncepcional e varfarina)."},
+{id:"biperideno",n:"Biperideno",cl:"Antiparkinsoniano anticolinérgico",r:"c1",tags:[],m:"Akineton",cm:["biperideno"],single:true,
+ ind:"Parkinsonismo e efeitos extrapiramidais por antipsicóticos.",
+ pos:"1 mg 2 vezes ao dia, até 3 a 16 mg/dia.",
+ ci:"Glaucoma de ângulo fechado; obstrução GI ou urinária.",
+ al:"Potencial de abuso; confusão em idosos. Receita C1 de antiparkinsoniano pode cobrir até 6 meses."},
+
+// ---------- Anti-infecciosos ----------
+{id:"cefuroxima",n:"Cefuroxima axetil",cl:"Antibiótico cefalosporina de 2ª geração",r:"atm",tags:[],m:"Zinnat",cm:["cefuroxima"],single:true,
+ ind:"Sinusite, otite, faringite, pneumonia leve, infecção urinária, doença de Lyme.",
+ pos:"250 a 500 mg a cada 12 h, após as refeições.",
+ ci:"Alergia a cefalosporinas.",
+ al:"Absorção melhor com alimento."},
+{id:"cefadroxila",n:"Cefadroxila",cl:"Antibiótico cefalosporina de 1ª geração",r:"atm",tags:[],m:"Cefamox",cm:["cefadroxila"],single:true,
+ ind:"Infecções de pele, faringite, infecção urinária.",
+ pos:"500 mg a 1 g a cada 12 h.",
+ ci:"Alergia a cefalosporinas.",
+ al:"Ajustar em insuficiência renal."},
+{id:"benzatina",n:"Benzilpenicilina benzatina",cl:"Antibiótico penicilina de depósito (injetável IM)",r:"atm",tags:[],m:"Benzetacil",cm:["benzilpenicilina benzatina"],single:true,
+ ind:"Sífilis; faringite estreptocócica; profilaxia de febre reumática.",
+ pos:"1.200.000 UI IM em dose única (faringite). Sífilis recente: 2.400.000 UI IM em dose única (1.200.000 em cada glúteo).",
+ ci:"Alergia a penicilinas.",
+ al:"Aplicação só em serviço com estrutura para anafilaxia, conforme regras da farmácia."},
+{id:"ceftriaxona",n:"Ceftriaxona",cl:"Antibiótico cefalosporina de 3ª geração (injetável)",r:"atm",tags:[],m:"Rocefin",cm:["ceftriaxona"],single:true,
+ ind:"Infecções graves; gonorreia; pneumonia; pielonefrite.",
+ pos:"1 a 2 g IM ou IV 1 vez ao dia. Gonorreia: dose única conforme protocolo.",
+ ci:"Alergia a cefalosporinas; recém-nascidos com hiperbilirrubinemia; uso IV com cálcio.",
+ al:"Para IM, há diluente com lidocaína (não usar IV)."},
+{id:"clindamicina",n:"Clindamicina",cl:"Antibiótico lincosamida",r:"atm",tags:[],m:"Dalacin C",cm:["clindamicina"],single:true,
+ ind:"Infecções de pele, odontológicas e ósseas; alternativa em alérgicos a penicilina.",
+ pos:"300 mg a cada 6 a 8 h.",
+ ci:"Histórico de colite por antibiótico.",
+ al:"Maior risco de colite por C. difficile: diarreia intensa exige atendimento."},
+{id:"norfloxacino",n:"Norfloxacino",cl:"Antibiótico fluoroquinolona",r:"atm",tags:["quino","qt"],m:"Floxacin",cm:["norfloxacino"],single:true,
+ ind:"Infecção urinária; prostatite.",
+ pos:"400 mg a cada 12 h (cistite: 3 dias).",
+ ci:"Menores de 18 anos; gestação; tendinopatia por quinolona.",
+ al:"Separar de cálcio, ferro e antiácidos."},
+{id:"fosfomicina",n:"Fosfomicina trometamol",cl:"Antibacteriano urinário",r:"atm",tags:[],m:"Monuril",cm:["fosfomicina"],single:true,
+ ind:"Cistite aguda não complicada.",
+ pos:"3 g em dose única, dissolvidos em água, de preferência à noite com a bexiga vazia.",
+ ci:"Insuficiência renal grave.",
+ al:"Sintomas que persistem após 3 dias: retornar ao médico."},
+{id:"secnidazol",n:"Secnidazol",cl:"Antiparasitário e antibacteriano (nitroimidazol)",r:"atm",tags:["metro"],m:"Secnidal",cm:["secnidazol"],single:true,
+ ind:"Tricomoníase, vaginose bacteriana, giardíase, amebíase.",
+ pos:"2 g em dose única, em uma refeição.",
+ ci:"1º trimestre da gestação; lactação.",
+ al:"Sem álcool por pelo menos 3 dias após a dose."},
+{id:"tinidazol",n:"Tinidazol",cl:"Antiparasitário e antibacteriano (nitroimidazol)",r:"atm",tags:["metro"],m:"Pletil",cm:["tinidazol"],single:true,
+ ind:"Tricomoníase, giardíase, amebíase, vaginose.",
+ pos:"2 g em dose única.",
+ ci:"1º trimestre da gestação; lactação.",
+ al:"Sem álcool por pelo menos 3 dias."},
+{id:"minociclina",n:"Minociclina",cl:"Antibiótico tetraciclina",r:"atm",tags:["tetra"],m:"Minomax",cm:["minociclina"],single:true,
+ ind:"Acne inflamatória; infecções de pele.",
+ pos:"100 mg a cada 12 h (acne: 50 a 100 mg/dia).",
+ ci:"Gestação; menores de 8 anos; uso de isotretinoína.",
+ al:"Tontura e hiperpigmentação com uso prolongado."},
+{id:"nistatina",n:"Nistatina (suspensão oral)",cl:"Antifúngico poliênico",r:"tv",tags:[],m:"Micostatin",cm:["nistatina"],single:false,
+ ind:"Candidíase oral (sapinho) e esofágica.",
+ pos:"100.000 UI/mL: adultos 4 a 6 mL 4 vezes ao dia (bochechar e engolir). Lactentes: 1 a 2 mL 4 vezes ao dia.",
+ ci:"Hipersensibilidade.",
+ al:"Manter por 48 h após a melhora. Higienizar bicos e mamadeiras."},
+{id:"itraconazol",n:"Itraconazol",cl:"Antifúngico azólico",r:"tv",tags:["inib3a4","inib3a4f","qt"],m:"Sporanox",cm:["itraconazol"],single:true,
+ ind:"Micoses de unha e pele, candidíase, esporotricose, histoplasmose.",
+ pos:"100 a 200 mg 1 a 2 vezes ao dia, logo após refeição. Onicomicose: pulsoterapia conforme prescrição.",
+ ci:"Insuficiência cardíaca; uso com sinvastatina, midazolam oral, domperidona e outros substratos do CYP3A4 de risco.",
+ al:"Inibidor potente do CYP3A4: revisar todos os medicamentos."},
+{id:"terbinafina",n:"Terbinafina",cl:"Antifúngico alilamina",r:"tv",tags:[],m:"Lamisil",cm:["terbinafina"],single:false,
+ ind:"Onicomicose; dermatofitoses extensas.",
+ pos:"250 mg 1 vez ao dia por 6 semanas (unhas das mãos) ou 12 semanas (unhas dos pés).",
+ ci:"Hepatopatia crônica ou ativa.",
+ al:"Hepatotoxicidade rara: oriente sinais (urina escura, icterícia). Creme tópico é isento de prescrição."},
+{id:"valaciclovir",n:"Valaciclovir",cl:"Antiviral",r:"tv",tags:[],m:"Valtrex",cm:["valaciclovir"],single:true,
+ ind:"Herpes labial e genital; herpes-zóster.",
+ pos:"Herpes labial: 2 g a cada 12 h por 1 dia. Genital recorrente: 500 mg a cada 12 h por 3 a 5 dias. Zóster: 1 g a cada 8 h por 7 dias.",
+ ci:"Hipersensibilidade ao valaciclovir ou aciclovir.",
+ al:"Iniciar aos primeiros sinais. Ajustar em insuficiência renal."},
+{id:"oseltamivir",n:"Oseltamivir",cl:"Antiviral para influenza",r:"tv",tags:[],m:"Tamiflu",cm:["oseltamivir"],single:true,
+ ind:"Tratamento e profilaxia da gripe (influenza).",
+ pos:"Tratamento: 75 mg a cada 12 h por 5 dias, idealmente nas primeiras 48 h. Profilaxia: 75 mg 1 vez ao dia por 10 dias.",
+ ci:"Hipersensibilidade.",
+ al:"Crianças: dose por peso conforme bula."},
+{id:"mebendazol",n:"Mebendazol",cl:"Anti-helmíntico",r:"tvmip",tags:[],m:"Pantelmin",cm:["mebendazol"],single:true,
+ ind:"Enterobíase, ascaridíase, tricuríase, ancilostomíase.",
+ pos:"100 mg a cada 12 h por 3 dias; enterobíase: 100 mg em dose única, repetida após 2 semanas.",
+ ci:"Gestação; menores de 1 ano.",
+ al:"Tratar contatos da casa na enterobíase."},
+{id:"nitazoxanida",n:"Nitazoxanida",cl:"Antiparasitário de amplo espectro",r:"tv",tags:[],m:"Annita",cm:["nitazoxanida"],single:true,
+ ind:"Giardíase, amebíase, criptosporidiose, helmintíases; diarreia por rotavírus.",
+ pos:"500 mg a cada 12 h por 3 dias, com alimento.",
+ ci:"Hipersensibilidade.",
+ al:"Urina pode ficar amarelada."},
+{id:"permetrina",n:"Permetrina (uso tópico)",cl:"Escabicida e pediculicida",r:"mip",tags:[],m:"Kwell, Nedax",cm:["permetrina"],single:false,
+ ind:"Escabiose (5%) e pediculose (1%).",
+ pos:"Escabiose: aplicar do pescoço aos pés à noite e lavar após 8 a 14 h; repetir em 7 dias. Piolho: aplicar no cabelo seco por 10 min e enxaguar; repetir em 7 a 10 dias.",
+ ci:"Hipersensibilidade.",
+ al:"Tratar todos os contatos e lavar roupas de cama em água quente."}
+);
+
+/* Ampliação 2: cardiometabólico, hormônios, GI, respiratório, pele, olhos, urologia, oncologia oral */
+DRUGS.push(
+// ---------- Cardiovascular ----------
+{id:"olmesartana",n:"Olmesartana medoxomila",cl:"BRA",r:"tv",tags:["bra","raa"],m:"Benicar, Olmetec",cm:["olmesartana"],single:true,
+ ind:"Hipertensão.",pos:"20 a 40 mg 1 vez ao dia.",
+ ci:"Gestação; uso com alisquireno em diabéticos.",al:"Raramente causa enteropatia (diarreia crônica e perda de peso)."},
+{id:"telmisartana",n:"Telmisartana",cl:"BRA",r:"tv",tags:["bra","raa"],m:"Micardis",cm:["telmisartana"],single:true,
+ ind:"Hipertensão; prevenção cardiovascular.",pos:"40 a 80 mg 1 vez ao dia.",
+ ci:"Gestação; obstrução biliar; insuficiência hepática grave.",al:"Monitorar potássio."},
+{id:"candesartana",n:"Candesartana cilexetila",cl:"BRA",r:"tv",tags:["bra","raa"],m:"Atacand",cm:["candesartana"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca.",pos:"8 a 32 mg 1 vez ao dia.",
+ ci:"Gestação.",al:"Monitorar potássio e creatinina."},
+{id:"irbesartana",n:"Irbesartana",cl:"BRA",r:"tv",tags:["bra","raa"],m:"Aprovel",cm:["irbesartana"],single:true,
+ ind:"Hipertensão; nefropatia diabética.",pos:"150 a 300 mg 1 vez ao dia.",
+ ci:"Gestação.",al:"Monitorar potássio."},
+{id:"losartana_hctz",n:"Losartana + hidroclorotiazida",cl:"BRA + diurético tiazídico",r:"tv",tags:["bra","raa","tiaz","diur"],m:"Hyzaar",cm:["losartana","hidroclorotiazida"],single:false,
+ ind:"Hipertensão.",pos:"50/12,5 a 100/25 mg 1 vez ao dia, pela manhã.",
+ ci:"Gestação; anúria; alergia a sulfonamidas.",al:"Combina os cuidados dos dois componentes."},
+{id:"ramipril",n:"Ramipril",cl:"IECA",r:"tv",tags:["ieca","raa"],m:"Triatec",cm:["ramipril"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca; prevenção cardiovascular.",pos:"2,5 a 10 mg 1 vez ao dia.",
+ ci:"Gestação; angioedema prévio.",al:"Tosse seca."},
+{id:"lisinopril",n:"Lisinopril",cl:"IECA",r:"tv",tags:["ieca","raa"],m:"Zestril, Prinivil",cm:["lisinopril"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca; pós-infarto.",pos:"10 a 40 mg 1 vez ao dia.",
+ ci:"Gestação; angioedema prévio.",al:"Tosse seca."},
+{id:"sacubitril",n:"Sacubitril + valsartana",cl:"Inibidor da neprilisina + BRA",r:"tv",tags:["bra","raa","arni"],m:"Entresto",cm:["sacubitril"],single:false,
+ ind:"Insuficiência cardíaca com fração de ejeção reduzida.",pos:"24/26 mg a 49/51 mg 2 vezes ao dia, com aumento até 97/103 mg 2 vezes ao dia.",
+ ci:"Uso de IECA (intervalo de 36 h); angioedema prévio; gestação.",al:"Hipotensão e hipercalemia."},
+{id:"nifedipino",n:"Nifedipino (liberação prolongada)",cl:"Bloqueador dos canais de cálcio",r:"tv",tags:[],m:"Adalat Retard, Adalat Oros",cm:["nifedipino"],single:true,
+ ind:"Hipertensão; angina; fenômeno de Raynaud.",pos:"Retard: 20 mg a cada 12 h. Oros: 30 a 60 mg 1 vez ao dia.",
+ ci:"Choque cardiogênico; uso de cápsula de liberação imediata em crise hipertensiva.",al:"Não mastigar formas de liberação prolongada. Edema e rubor."},
+{id:"diltiazem",n:"Diltiazem",cl:"Bloqueador dos canais de cálcio (não di-hidropiridínico)",r:"tv",tags:["inib3a4","bcc_nd"],m:"Cardizem, Balcor",cm:["diltiazem"],single:true,
+ ind:"Angina; hipertensão; controle de frequência na fibrilação atrial.",pos:"180 a 360 mg/dia (formas de liberação prolongada 1 a 2 vezes ao dia).",
+ ci:"Bloqueio AV de 2º/3º grau; disfunção sinusal; insuficiência cardíaca com fração reduzida.",al:"Bradicardia com betabloqueador."},
+{id:"lercanidipino",n:"Lercanidipino",cl:"Bloqueador dos canais de cálcio",r:"tv",tags:[],m:"Zanidip",cm:["lercanidipino"],single:true,
+ ind:"Hipertensão.",pos:"10 a 20 mg 1 vez ao dia, 15 min antes de uma refeição.",
+ ci:"Uso de inibidores potentes do CYP3A4; insuficiência hepática ou renal grave.",al:"Menos edema que o anlodipino."},
+{id:"indapamida",n:"Indapamida",cl:"Diurético tiazídico-símile",r:"tv",tags:["tiaz","diur"],m:"Natrilix SR",cm:["indapamida"],single:true,
+ ind:"Hipertensão.",pos:"1,5 mg (SR) 1 vez ao dia, pela manhã.",
+ ci:"Insuficiência renal grave; hipocalemia; encefalopatia hepática.",al:"Monitorar potássio e sódio."},
+{id:"bisoprolol",n:"Bisoprolol",cl:"Betabloqueador cardiosseletivo",r:"tv",tags:["bb"],m:"Concor",cm:["bisoprolol"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca; angina.",pos:"2,5 a 10 mg 1 vez ao dia (insuficiência cardíaca: iniciar 1,25 mg).",
+ ci:"Bradicardia; bloqueio AV; insuficiência cardíaca descompensada; asma grave.",al:"Não suspender abruptamente."},
+{id:"nebivolol",n:"Nebivolol",cl:"Betabloqueador cardiosseletivo vasodilatador",r:"tv",tags:["bb"],m:"Nebilet",cm:["nebivolol"],single:true,
+ ind:"Hipertensão; insuficiência cardíaca em idosos.",pos:"5 mg 1 vez ao dia.",
+ ci:"Insuficiência hepática; bradicardia; bloqueio AV.",al:"Não suspender abruptamente."},
+{id:"metildopa",n:"Metildopa",cl:"Anti-hipertensivo de ação central",r:"tv",tags:["snc"],m:"Aldomet",cm:["metildopa"],single:true,
+ ind:"Hipertensão, principalmente na gestação.",pos:"250 mg 2 a 3 vezes ao dia, até 2 g/dia.",
+ ci:"Hepatopatia ativa; depressão; feocromocitoma; uso de IMAO.",al:"Sonolência no início; pode causar teste de Coombs positivo."},
+{id:"hidralazina",n:"Hidralazina",cl:"Vasodilatador direto",r:"tv",tags:[],m:"Apresolina",cm:["hidralazina"],single:true,
+ ind:"Hipertensão (inclusive na gestação); insuficiência cardíaca (com nitrato).",pos:"25 a 50 mg 3 a 4 vezes ao dia.",
+ ci:"Lúpus; doença coronariana grave sem betabloqueador.",al:"Taquicardia reflexa e cefaleia."},
+{id:"clonidina",n:"Clonidina",cl:"Anti-hipertensivo de ação central (agonista alfa-2)",r:"tv",tags:["snc"],m:"Atensina",cm:["clonidina"],single:true,
+ ind:"Hipertensão; abstinência de opioides (uso especializado).",pos:"0,1 a 0,2 mg 2 a 3 vezes ao dia (máximo de 0,6 mg/dia).",
+ ci:"Bradicardia grave; doença do nó sinusal.",al:"Retirada abrupta causa hipertensão rebote."},
+{id:"doxazosina",n:"Doxazosina",cl:"Bloqueador alfa-1",r:"tv",tags:["alfa"],m:"Carduran, Unoprost",cm:["doxazosina"],single:true,
+ ind:"Hiperplasia prostática benigna; hipertensão (adjuvante).",pos:"1 mg à noite, com aumento até 4 a 8 mg/dia.",
+ ci:"Hipotensão ortostática.",al:"Primeira dose ao deitar (risco de síncope)."},
+{id:"amiodarona",n:"Amiodarona",cl:"Antiarrítmico",r:"tv",tags:["qt","amio","inib3a4"],m:"Ancoron, Atlansil",cm:["amiodarona"],single:true,
+ ind:"Arritmias ventriculares e supraventriculares; fibrilação atrial.",pos:"Ataque conforme prescrição; manutenção de 100 a 400 mg/dia.",
+ ci:"Bradicardia sinusal; bloqueio AV; doença tireoidiana; prolongamento do QT.",al:"Efeitos em tireoide, pulmão, fígado e olhos; fotossensibilidade. Muitas interações."},
+{id:"digoxina",n:"Digoxina",cl:"Glicosídeo cardíaco",r:"tv",tags:["digox"],m:"Digoxina",cm:["digoxina"],single:true,
+ ind:"Insuficiência cardíaca; controle de frequência na fibrilação atrial.",pos:"0,125 a 0,25 mg 1 vez ao dia (idosos e nefropatas: doses menores).",
+ ci:"Bloqueio AV; taquicardia ventricular; cardiomiopatia hipertrófica obstrutiva.",al:"Janela terapêutica estreita: náusea, visão amarelada e confusão sugerem intoxicação."},
+{id:"ticagrelor",n:"Ticagrelor",cl:"Antiagregante plaquetário",r:"tv",tags:["antiplaq","sub3a4"],m:"Brilinta",cm:["ticagrelor"],single:true,
+ ind:"Síndrome coronariana aguda, com AAS.",pos:"90 mg 2 vezes ao dia (após o 1º ano, 60 mg 2 vezes ao dia conforme prescrição).",
+ ci:"Sangramento ativo; AVC hemorrágico prévio; insuficiência hepática grave; inibidores potentes do CYP3A4.",al:"Dispneia é comum. AAS associado deve ser de até 100 mg/dia."},
+{id:"dabigatrana",n:"Dabigatrana",cl:"Anticoagulante oral direto (inibidor da trombina)",r:"tv",tags:["doac","anticoag"],m:"Pradaxa",cm:["dabigatrana"],single:true,
+ ind:"Fibrilação atrial; tratamento e prevenção de TVP/TEP.",pos:"FA: 150 mg 2 vezes ao dia (110 mg 2 vezes ao dia a partir de 80 anos ou com alto risco de sangramento).",
+ ci:"ClCr abaixo de 30 mL/min; sangramento ativo; prótese valvar mecânica.",al:"Não abrir a cápsula. Guardar no frasco original."},
+{id:"edoxabana",n:"Edoxabana",cl:"Anticoagulante oral direto (inibidor do fator Xa)",r:"tv",tags:["doac","anticoag"],m:"Lixiana",cm:["edoxabana"],single:true,
+ ind:"Fibrilação atrial; TVP/TEP.",pos:"60 mg 1 vez ao dia (30 mg se ClCr de 15 a 50, peso de 60 kg ou menos, ou certos inibidores da P-gp).",
+ ci:"Sangramento ativo; hepatopatia com coagulopatia.",al:"Não interromper sem orientação."},
+{id:"ezetimiba",n:"Ezetimiba",cl:"Hipolipemiante (inibidor da absorção de colesterol)",r:"tv",tags:[],m:"Zetia, Ezetrol",cm:["ezetimiba"],single:false,
+ ind:"Hipercolesterolemia (isolada ou com estatina).",pos:"10 mg 1 vez ao dia.",
+ ci:"Com estatina: doença hepática ativa.",al:"Bem tolerada."},
+{id:"fenofibrato",n:"Fenofibrato",cl:"Hipolipemiante (fibrato)",r:"tv",tags:["fibrato"],m:"Lipidil",cm:["fenofibrato"],single:true,
+ ind:"Hipertrigliceridemia; dislipidemia mista.",pos:"160 a 250 mg 1 vez ao dia, com refeição.",
+ ci:"Insuficiência renal ou hepática grave; doença da vesícula.",al:"Com estatina, maior risco de miopatia."},
+{id:"ciprofibrato",n:"Ciprofibrato",cl:"Hipolipemiante (fibrato)",r:"tv",tags:["fibrato"],m:"Oroxadin",cm:["ciprofibrato"],single:true,
+ ind:"Hipertrigliceridemia.",pos:"100 mg 1 vez ao dia.",
+ ci:"Insuficiência renal ou hepática grave; gestação.",al:"Potencializa a varfarina."},
+{id:"cilostazol",n:"Cilostazol",cl:"Antiagregante e vasodilatador",r:"tv",tags:["antiplaq"],m:"Vasogard",cm:["cilostazol"],single:true,
+ ind:"Claudicação intermitente.",pos:"100 mg 2 vezes ao dia, 30 min antes ou 2 h após as refeições.",
+ ci:"Insuficiência cardíaca de qualquer grau; sangramento ativo.",al:"Cefaleia e palpitação."},
+{id:"pentoxifilina",n:"Pentoxifilina",cl:"Hemorreológico",r:"tv",tags:[],m:"Trental",cm:["pentoxifilina"],single:true,
+ ind:"Doença arterial periférica; úlceras venosas (adjuvante).",pos:"400 mg 2 a 3 vezes ao dia, com refeições.",
+ ci:"Hemorragia recente; infarto agudo.",al:"Pode potencializar anticoagulantes."},
+{id:"trimetazidina",n:"Trimetazidina",cl:"Antianginoso metabólico",r:"tv",tags:[],m:"Vastarel MR",cm:["trimetazidina"],single:true,
+ ind:"Angina estável (adjuvante).",pos:"35 mg 2 vezes ao dia, com refeições.",
+ ci:"Doença de Parkinson e tremores; insuficiência renal grave.",al:"Pode causar parkinsonismo."},
+
+// ---------- Diabetes, metabolismo e ossos ----------
+{id:"insulina_nph",n:"Insulina humana NPH e regular",cl:"Insulina (ação intermediária e rápida)",r:"tv",tags:["insulina","antidiab"],m:"Humulin, Novolin",cm:["insulina humana"],single:false,
+ ind:"Diabetes tipo 1 e 2.",pos:"Dose individual por glicemia. NPH: 1 a 3 aplicações/dia. Regular: 30 min antes das refeições.",
+ ci:"Hipoglicemia.",al:"Fechada: geladeira de 2 a 8 °C. Em uso: em geral até 4 semanas em temperatura ambiente (confira a bula). Ensinar rodízio de locais."},
+{id:"glargina",n:"Insulina glargina",cl:"Insulina basal de ação longa",r:"tv",tags:["insulina","antidiab"],m:"Lantus, Toujeo, Basaglar",cm:["glargina"],single:false,
+ ind:"Diabetes tipo 1 e 2.",pos:"1 vez ao dia, sempre no mesmo horário, com dose individual.",
+ ci:"Hipoglicemia.",al:"Não misturar com outras insulinas. Validade em uso varia por produto (Lantus 28 dias; Toujeo 56 dias)."},
+{id:"glimepirida",n:"Glimepirida",cl:"Sulfonilureia",r:"tv",tags:["su","antidiab"],m:"Amaryl",cm:["glimepirida"],single:true,
+ ind:"Diabetes tipo 2.",pos:"1 a 4 mg no café da manhã (máximo de 8 mg/dia).",
+ ci:"Diabetes tipo 1; insuficiência renal ou hepática grave; gestação.",al:"Hipoglicemia."},
+{id:"pioglitazona",n:"Pioglitazona",cl:"Antidiabético (tiazolidinediona)",r:"tv",tags:["antidiab"],m:"Actos",cm:["pioglitazona"],single:true,
+ ind:"Diabetes tipo 2.",pos:"15 a 45 mg 1 vez ao dia.",
+ ci:"Insuficiência cardíaca; câncer de bexiga ativo ou prévio; hepatopatia.",al:"Edema e ganho de peso; risco de fraturas em mulheres."},
+{id:"vildagliptina",n:"Vildagliptina",cl:"Inibidor da DPP-4",r:"tv",tags:["antidiab"],m:"Galvus",cm:["vildagliptina"],single:false,
+ ind:"Diabetes tipo 2.",pos:"50 mg 2 vezes ao dia (com sulfonilureia: 50 mg 1 vez ao dia).",
+ ci:"Insuficiência hepática.",al:"Exames de função hepática periódicos."},
+{id:"linagliptina",n:"Linagliptina",cl:"Inibidor da DPP-4",r:"tv",tags:["antidiab"],m:"Trayenta",cm:["linagliptina"],single:false,
+ ind:"Diabetes tipo 2.",pos:"5 mg 1 vez ao dia (sem ajuste renal).",
+ ci:"Diabetes tipo 1.",al:"Boa opção em renais crônicos."},
+{id:"dulaglutida",n:"Dulaglutida",cl:"Agonista do receptor de GLP-1",r:"glp1",tags:["glp1","antidiab"],m:"Trulicity",cm:["dulaglutida"],single:true,
+ ind:"Diabetes tipo 2.",pos:"0,75 mg por semana, com aumento para 1,5 mg (até 4,5 mg semanais).",
+ ci:"Carcinoma medular de tireoide (história pessoal ou familiar) ou NEM2.",al:"Náusea no início."},
+{id:"orlistate",n:"Orlistate",cl:"Antiobesidade (inibidor da lipase)",r:"tv",tags:["orli"],m:"Xenical",cm:["orlistate"],single:true,
+ ind:"Obesidade, com dieta.",pos:"120 mg 3 vezes ao dia, com as refeições que contêm gordura.",
+ ci:"Má absorção crônica; colestase.",al:"Fezes oleosas se a dieta for gordurosa. Suplementar vitaminas lipossolúveis à noite."},
+{id:"alendronato",n:"Alendronato de sódio",cl:"Bisfosfonato",r:"tv",tags:["bisf"],m:"Fosamax",cm:["alendronato"],single:false,
+ ind:"Osteoporose.",pos:"70 mg 1 vez por semana.",
+ ci:"Anormalidades do esôfago; incapacidade de ficar em pé ou sentado por 30 min; hipocalcemia; ClCr abaixo de 35.",al:"Tomar em jejum com copo cheio de água, sem deitar e sem comer por 30 min. Separar do cálcio."},
+{id:"risedronato",n:"Risedronato de sódio",cl:"Bisfosfonato",r:"tv",tags:["bisf"],m:"Actonel",cm:["risedronato"],single:true,
+ ind:"Osteoporose; doença de Paget.",pos:"35 mg 1 vez por semana ou 150 mg 1 vez por mês.",
+ ci:"Hipocalcemia; ClCr abaixo de 30.",al:"Mesmas orientações do alendronato."},
+{id:"vitd",n:"Colecalciferol (vitamina D3)",cl:"Vitamina",r:"tvmip",tags:[],m:"Addera D3, Depura",cm:["colecalciferol"],single:false,
+ ind:"Prevenção e tratamento da deficiência de vitamina D.",pos:"Manutenção: 1.000 a 2.000 UI/dia. Deficiência: doses semanais maiores sob prescrição (ex.: 50.000 UI por semana por 8 semanas).",
+ ci:"Hipercalcemia; hipervitaminose D.",al:"Doses altas só com prescrição e dosagem sérica."},
+{id:"acfolico",n:"Ácido fólico",cl:"Vitamina",r:"tvmip",tags:[],m:"Endofolin",cm:["acido folico"],single:true,
+ ind:"Prevenção de defeitos do tubo neural; anemia megaloblástica.",pos:"Pré-concepção e 1º trimestre: 0,4 mg/dia (alto risco: 4 a 5 mg/dia). Anemia: 5 mg/dia.",
+ ci:"Anemia perniciosa não tratada.",al:"Iniciar pelo menos 1 mês antes de engravidar."},
+{id:"tiamazol",n:"Tiamazol (metimazol)",cl:"Antitireoidiano",r:"tv",tags:[],m:"Tapazol",cm:["tiamazol"],single:true,
+ ind:"Hipertireoidismo.",pos:"Inicial de 10 a 40 mg/dia; manutenção de 5 a 15 mg/dia.",
+ ci:"1º trimestre da gestação (preferir propiltiouracil); agranulocitose prévia.",al:"Febre ou dor de garganta: suspender e fazer hemograma (agranulocitose)."},
+
+// ---------- Hormônios e saúde da mulher ----------
+{id:"drospirenona",n:"Drospirenona + etinilestradiol",cl:"Contraceptivo hormonal combinado",r:"tv",tags:["horm"],m:"Yasmin, Yaz",cm:["drospirenona"],single:false,
+ ind:"Contracepção; acne e TPM (algumas apresentações).",pos:"1 comprimido por dia, conforme o esquema do produto (21+7 ou 24+4).",
+ ci:"Tabagismo acima de 35 anos; trombose; enxaqueca com aura; insuficiência renal; hepatopatia.",al:"Risco de hipercalemia com IECA, BRA e espironolactona."},
+{id:"desogestrel",n:"Desogestrel 75 mcg",cl:"Contraceptivo só de progestagênio",r:"tv",tags:["horm"],m:"Cerazette",cm:["desogestrel"],single:true,
+ ind:"Contracepção, inclusive na amamentação e quando estrogênio é contraindicado.",pos:"1 comprimido por dia, contínuo, sem pausa.",
+ ci:"Trombose ativa; câncer de mama; hepatopatia grave.",al:"Atraso maior que 12 h exige método adicional por 7 dias. Sangramento irregular é comum."},
+{id:"ciproterona",n:"Ciproterona + etinilestradiol",cl:"Antiandrogênico + estrogênio",r:"tv",tags:["horm"],m:"Diane 35, Selene",cm:["ciproterona"],single:false,
+ ind:"Acne e hirsutismo androgênicos em mulheres que também desejam contracepção.",pos:"1 comprimido por dia por 21 dias, com pausa de 7.",
+ ci:"Trombose; tabagismo acima de 35 anos; hepatopatia; meningioma.",al:"Maior risco de trombose que contraceptivos de levonorgestrel."},
+{id:"medroxiprogesterona",n:"Medroxiprogesterona injetável trimestral",cl:"Contraceptivo injetável de progestagênio",r:"tv",tags:["horm"],m:"Depo-Provera",cm:["medroxiprogesterona"],single:false,
+ ind:"Contracepção.",pos:"150 mg IM a cada 3 meses (12 a 13 semanas).",
+ ci:"Gestação; sangramento vaginal sem diagnóstico; doença hepática.",al:"Perda de massa óssea com uso prolongado; retorno da fertilidade pode demorar."},
+{id:"mensal",n:"Enantato de noretisterona + valerato de estradiol",cl:"Contraceptivo injetável mensal",r:"tv",tags:["horm"],m:"Mesigyna",cm:["noretisterona","estradiol"],single:false,
+ ind:"Contracepção.",pos:"1 ampola IM a cada 30 dias (± 3 dias).",
+ ci:"As dos contraceptivos combinados.",al:"Respeitar a janela da aplicação."},
+{id:"dienogeste",n:"Dienogeste 2 mg",cl:"Progestagênio",r:"tv",tags:["horm"],m:"Allurene",cm:["dienogeste"],single:true,
+ ind:"Endometriose.",pos:"2 mg 1 vez ao dia, contínuo.",
+ ci:"Trombose ativa; hepatopatia grave; tumores hormônio-dependentes.",al:"Não é contraceptivo registrado: orientar método de barreira."},
+{id:"progesterona",n:"Progesterona micronizada",cl:"Progestagênio natural",r:"tv",tags:[],m:"Utrogestan",cm:["progesterona"],single:true,
+ ind:"Suporte de fase lútea; terapia hormonal da menopausa (com estrogênio); ameaça de parto prematuro.",pos:"100 a 600 mg/dia por via oral ou vaginal, conforme a indicação.",
+ ci:"Sangramento vaginal sem diagnóstico; hepatopatia grave; trombose.",al:"Via oral causa sonolência: tomar à noite."},
+{id:"cabergolina",n:"Cabergolina",cl:"Agonista dopaminérgico",r:"tv",tags:[],m:"Dostinex",cm:["cabergolina"],single:true,
+ ind:"Hiperprolactinemia; inibição da lactação.",pos:"0,25 a 0,5 mg 1 a 2 vezes por semana. Inibição da lactação: 1 mg em dose única no 1º dia pós-parto.",
+ ci:"Valvopatia cardíaca; pré-eclâmpsia; psicose pós-parto.",al:"Náusea e tontura."},
+{id:"tranexamico",n:"Ácido tranexâmico",cl:"Antifibrinolítico",r:"tv",tags:["prot"],m:"Transamin",cm:["tranexamico"],single:true,
+ ind:"Sangramento menstrual intenso; sangramentos dentários e pós-operatórios; melasma (uso comum).",pos:"Menorragia: 500 mg a 1 g 3 vezes ao dia, por até 5 dias.",
+ ci:"Trombose ativa ou prévia; coagulação intravascular; convulsões.",al:"Com contraceptivo hormonal, maior risco de trombose."},
+
+// ---------- Corticoides ----------
+{id:"betametasona",n:"Betametasona",cl:"Corticoide",r:"tv",tags:["cort"],m:"Celestone, Diprospan",cm:["betametasona"],single:false,
+ ind:"Alergias, dermatoses, doenças reumáticas; maturação pulmonar fetal.",pos:"Oral: 0,25 a 8 mg/dia. Injetável de depósito: 1 ampola IM conforme indicação. Creme: 1 a 2 vezes ao dia.",
+ ci:"Infecção fúngica sistêmica; creme em lesões infectadas.",al:"Injeção de depósito tem efeito por semanas: eleva glicemia."},
+{id:"deflazacorte",n:"Deflazacorte",cl:"Corticoide",r:"tv",tags:["cort"],m:"Calcort",cm:["deflazacorte"],single:true,
+ ind:"As dos corticoides sistêmicos.",pos:"6 a 90 mg/dia (6 mg equivalem a cerca de 5 mg de prednisona).",
+ ci:"Infecção fúngica sistêmica.",al:"Mesmos cuidados da prednisona."},
+
+// ---------- Gastrointestinal ----------
+{id:"lansoprazol",n:"Lansoprazol",cl:"IBP",r:"tv",tags:["ibp"],m:"Prazol",cm:["lansoprazol"],single:true,
+ ind:"Refluxo, úlcera, H. pylori.",pos:"15 a 30 mg 1 vez ao dia, em jejum.",ci:"Uso com atazanavir.",al:"Mesmos cuidados dos IBPs."},
+{id:"famotidina",n:"Famotidina",cl:"Antagonista H2",r:"tvmip",tags:[],m:"Famox",cm:["famotidina"],single:true,
+ ind:"Azia, refluxo, úlcera.",pos:"20 mg 2 vezes ao dia ou 40 mg à noite.",ci:"Hipersensibilidade.",al:"Alternativa à ranitidina (retirada do mercado)."},
+{id:"bromoprida",n:"Bromoprida",cl:"Procinético e antiemético",r:"tv",tags:["metoclo"],m:"Digesan",cm:["bromoprida"],single:true,
+ ind:"Náuseas, vômitos, refluxo.",pos:"10 mg 3 vezes ao dia, antes das refeições.",
+ ci:"Epilepsia; obstrução ou sangramento GI; feocromocitoma.",al:"Reações extrapiramidais, sobretudo em crianças."},
+{id:"trimebutina",n:"Trimebutina",cl:"Regulador da motilidade intestinal",r:"tv",tags:[],m:"Debridat",cm:["trimebutina"],single:true,
+ ind:"Síndrome do intestino irritável; dor abdominal funcional.",pos:"100 a 200 mg 3 vezes ao dia.",ci:"Hipersensibilidade.",al:"Bem tolerada."},
+{id:"pinaverio",n:"Brometo de pinavério",cl:"Antiespasmódico intestinal",r:"tv",tags:[],m:"Dicetel",cm:["pinaverio"],single:true,
+ ind:"Síndrome do intestino irritável.",pos:"50 a 100 mg 3 vezes ao dia, durante as refeições, com água e sem deitar.",ci:"Hipersensibilidade.",al:"Irritação esofágica se tomado deitado."},
+{id:"lactulose",n:"Lactulose",cl:"Laxante osmótico",r:"mip",tags:[],m:"Lactulona",cm:["lactulose"],single:true,
+ ind:"Constipação; encefalopatia hepática.",pos:"Constipação: 15 a 30 mL/dia.",ci:"Galactosemia; obstrução intestinal.",al:"Gases e cólica no início."},
+{id:"macrogol",n:"Macrogol (polietilenoglicol 3350)",cl:"Laxante osmótico",r:"mip",tags:[],m:"Muvinlax",cm:["macrogol"],single:false,
+ ind:"Constipação; impactação fecal.",pos:"1 sachê dissolvido em água 1 a 2 vezes ao dia.",ci:"Obstrução ou perfuração intestinal; doença inflamatória grave.",al:"Efeito em 1 a 3 dias."},
+{id:"picossulfato",n:"Picossulfato de sódio",cl:"Laxante estimulante",r:"mip",tags:[],m:"Guttalax",cm:["picossulfato"],single:true,
+ ind:"Constipação ocasional.",pos:"5 a 10 mg (conforme gotas do produto) à noite.",ci:"Abdome agudo; obstrução; desidratação.",al:"Não usar continuamente."},
+{id:"racecadotrila",n:"Racecadotrila",cl:"Antidiarreico antissecretor",r:"tv",tags:[],m:"Tiorfan",cm:["racecadotrila"],single:true,
+ ind:"Diarreia aguda.",pos:"Adultos: 100 mg 3 vezes ao dia (até 7 dias). Crianças: sachê por peso.",ci:"Diarreia com sangue ou febre alta.",al:"Sempre com reidratação oral."},
+{id:"boulardii",n:"Saccharomyces boulardii",cl:"Probiótico",r:"mip",tags:[],m:"Floratil",cm:["saccharomyces"],single:true,
+ ind:"Diarreia aguda; prevenção de diarreia por antibiótico.",pos:"200 mg 2 vezes ao dia.",ci:"Cateter venoso central; imunossupressão grave.",al:"Pode ser tomado com antibiótico (é um fungo, não é inativado por ele)."},
+{id:"sro",n:"Sais para reidratação oral",cl:"Reidratante",r:"mip",tags:[],m:"",cm:["cloreto de potassio","citrato de sodio"],single:false,
+ ind:"Prevenção e tratamento da desidratação por diarreia ou vômitos.",pos:"Após cada evacuação líquida: crianças abaixo de 2 anos 50 a 100 mL; 2 a 10 anos 100 a 200 mL; maiores, à vontade.",ci:"Íleo; vômitos incoercíveis; choque.",al:"Preparar exatamente conforme o rótulo; não adoçar. Sinais de desidratação grave: atendimento imediato."},
+{id:"ursodiol",n:"Ácido ursodesoxicólico",cl:"Ácido biliar",r:"tv",tags:[],m:"Ursacol",cm:["ursodesoxicolico"],single:true,
+ ind:"Cálculo biliar de colesterol; colangite biliar primária.",pos:"10 a 15 mg/kg/dia em 2 a 3 tomadas.",ci:"Colecistite aguda; obstrução biliar.",al:"Tratamento longo (meses)."},
+
+// ---------- Respiratório e alergia ----------
+{id:"levocetirizina",n:"Levocetirizina",cl:"Anti-histamínico H1 de 2ª geração",r:"tvmip",tags:[],m:"Zina, Xuzal",cm:["levocetirizina"],single:true,
+ ind:"Rinite alérgica; urticária.",pos:"5 mg 1 vez ao dia.",ci:"Insuficiência renal grave.",al:"Sonolência leve em alguns pacientes."},
+{id:"bilastina",n:"Bilastina",cl:"Anti-histamínico H1 de 2ª geração",r:"tv",tags:[],m:"Alektos",cm:["bilastina"],single:true,
+ ind:"Rinite alérgica; urticária.",pos:"20 mg 1 vez ao dia, em jejum (1 h antes ou 2 h depois de comer).",ci:"Hipersensibilidade.",al:"Suco de frutas reduz a absorção."},
+{id:"ebastina",n:"Ebastina",cl:"Anti-histamínico H1 de 2ª geração",r:"tv",tags:[],m:"Ebastel",cm:["ebastina"],single:true,
+ ind:"Rinite alérgica; urticária.",pos:"10 a 20 mg 1 vez ao dia.",ci:"Insuficiência hepática grave.",al:"Pouca sedação."},
+{id:"pseudoefedrina",n:"Pseudoefedrina (associada a anti-histamínico)",cl:"Descongestionante sistêmico",r:"tv",tags:["simpat"],m:"Claritin-D, Allegra-D",cm:["pseudoefedrina"],single:false,
+ ind:"Rinite com congestão nasal.",pos:"Conforme o produto (em geral 1 comprimido a cada 12 h).",ci:"Hipertensão grave; doença coronariana; glaucoma; retenção urinária; uso de IMAO.",al:"Insônia e taquicardia. Medir a pressão de hipertensos."},
+{id:"mometasona_nasal",n:"Mometasona (spray nasal)",cl:"Corticoide nasal",r:"tv",tags:[],m:"Nasonex",cm:["mometasona"],single:false,
+ ind:"Rinite alérgica; pólipos nasais.",pos:"2 jatos em cada narina 1 vez ao dia (manutenção: 1 jato).",ci:"Infecção nasal não tratada.",al:"Efeito pleno em alguns dias: usar continuamente."},
+{id:"budesonida_nasal",n:"Budesonida (spray nasal)",cl:"Corticoide nasal",r:"tv",tags:[],m:"Busonid",cm:["budesonida"],single:false,
+ ind:"Rinite alérgica.",pos:"64 a 128 mcg em cada narina 1 vez ao dia (conforme concentração).",ci:"Infecção nasal não tratada.",al:"Ensinar a técnica (apontar para fora do septo)."},
+{id:"nafazolina",n:"Nafazolina (descongestionante nasal)",cl:"Vasoconstritor nasal",r:"mip",tags:["simpat"],m:"Neosoro",cm:["nafazolina"],single:false,
+ ind:"Congestão nasal de curta duração.",pos:"2 a 4 gotas em cada narina até 4 vezes ao dia, por no máximo 3 a 5 dias.",ci:"Menores de 12 anos; glaucoma de ângulo fechado; uso de IMAO.",al:"Uso prolongado causa rinite medicamentosa (efeito rebote). Intoxicação grave em crianças."},
+{id:"budform",n:"Budesonida + formoterol (inalatório)",cl:"Corticoide inalatório + broncodilatador de longa ação",r:"tv",tags:[],m:"Symbicort, Alenia",cm:["formoterol"],single:false,
+ ind:"Asma; DPOC.",pos:"1 a 2 inalações 2 vezes ao dia (na asma pode ser usado também como resgate, conforme prescrição).",ci:"Hipersensibilidade.",al:"Enxaguar a boca após o uso (candidíase oral)."},
+{id:"flutsalm",n:"Fluticasona + salmeterol (inalatório)",cl:"Corticoide inalatório + broncodilatador de longa ação",r:"tv",tags:[],m:"Seretide",cm:["salmeterol"],single:false,
+ ind:"Asma; DPOC.",pos:"1 inalação 2 vezes ao dia.",ci:"Hipersensibilidade; alergia à proteína do leite (pó).",al:"Não serve para crise aguda. Enxaguar a boca."},
+{id:"beclometasona",n:"Beclometasona (inalatória)",cl:"Corticoide inalatório",r:"tv",tags:[],m:"Clenil",cm:["beclometasona"],single:false,
+ ind:"Asma persistente.",pos:"200 a 800 mcg/dia divididos em 2 tomadas, com espaçador.",ci:"Crise aguda isolada.",al:"Enxaguar a boca após o uso."},
+{id:"ipratropio",n:"Brometo de ipratrópio",cl:"Broncodilatador anticolinérgico",r:"tv",tags:[],m:"Atrovent",cm:["ipratropio"],single:false,
+ ind:"DPOC; crise de asma (com beta-2 em nebulização).",pos:"Spray: 2 jatos 3 a 4 vezes ao dia. Nebulização: conforme prescrição.",ci:"Hipersensibilidade à atropina.",al:"Proteger os olhos na nebulização (glaucoma)."},
+{id:"tiotropio",n:"Tiotrópio",cl:"Broncodilatador anticolinérgico de longa ação",r:"tv",tags:[],m:"Spiriva",cm:["tiotropio"],single:false,
+ ind:"DPOC; asma grave (adjuvante).",pos:"2 inalações (Respimat 2,5 mcg) 1 vez ao dia.",ci:"Hipersensibilidade.",al:"Boca seca; cautela em glaucoma e retenção urinária."},
+{id:"fenoterol",n:"Fenoterol",cl:"Broncodilatador beta-2 de curta ação",r:"tv",tags:["salbu"],m:"Berotec",cm:["fenoterol"],single:false,
+ ind:"Crise de asma e broncoespasmo.",pos:"Spray: 1 a 2 jatos se necessário. Gotas para nebulização: conforme prescrição por peso.",ci:"Taquiarritmias; cardiomiopatia hipertrófica obstrutiva.",al:"Tremor e taquicardia."},
+{id:"dextrometorfano",n:"Dextrometorfano",cl:"Antitussígeno",r:"mip",tags:["sero"],m:"Silencium",cm:["dextrometorfano"],single:false,
+ ind:"Tosse seca irritativa.",pos:"10 a 20 mg a cada 4 h ou 30 mg a cada 6 a 8 h (máximo de 120 mg/dia).",ci:"Uso de IMAO; tosse produtiva; asma; menores de 2 anos.",al:"Interação serotoninérgica com antidepressivos."},
+{id:"bromexina",n:"Bromexina",cl:"Mucolítico",r:"mip",tags:[],m:"Bisolvon",cm:["bromexina"],single:true,
+ ind:"Tosse com secreção.",pos:"8 mg 3 vezes ao dia.",ci:"Hipersensibilidade.",al:"Hidratação."},
+{id:"levodropropizina",n:"Levodropropizina",cl:"Antitussígeno periférico",r:"tvmip",tags:[],m:"Antux",cm:["levodropropizina"],single:true,
+ ind:"Tosse seca.",pos:"60 mg até 3 vezes ao dia, com intervalo de 6 h.",ci:"Broncorreia; insuficiência hepática grave; gestação.",al:"Pouca sedação."},
+{id:"antigripal",n:"Antigripal (paracetamol + fenilefrina + clorfeniramina)",cl:"Associação sintomática para gripe",r:"mip",tags:["paracetamol","snc","simpat"],m:"Benegrip, Resfenol, Cimegripe",cm:["fenilefrina","paracetamol"],single:false,
+ ind:"Sintomas de gripe e resfriado.",pos:"Conforme o produto (em geral 1 cápsula a cada 6 h).",ci:"Hipertensão grave; uso de IMAO; glaucoma; menores de 12 anos (conforme produto).",al:"Contém paracetamol: não somar com outro analgésico com paracetamol. Sonolência pelo anti-histamínico."},
+{id:"benzidamina",n:"Benzidamina (spray e colutório)",cl:"Anti-inflamatório tópico de orofaringe",r:"mip",tags:[],m:"Flogoral, Benflogin",cm:["benzidamina"],single:false,
+ ind:"Dor de garganta; inflamação da boca.",pos:"Spray: 2 a 4 jatos 3 a 6 vezes ao dia.",ci:"Hipersensibilidade.",al:"Dor de garganta com febre alta, placas ou mais de 3 dias: encaminhar."},
+
+// ---------- Pele, cabelo, olhos ----------
+{id:"minoxidil",n:"Minoxidil",cl:"Vasodilatador (tópico para alopecia; oral para hipertensão)",r:"tvmip",tags:[],m:"Rogaine, Neo Minoxidil",cm:["minoxidil"],single:true,
+ ind:"Alopecia androgenética (tópico); hipertensão grave (oral).",pos:"Tópico: 1 mL 2 vezes ao dia no couro cabeludo seco (5% em homens; 2% em mulheres).",ci:"Gestação e lactação (tópico); feocromocitoma (oral).",al:"Queda inicial é esperada nas primeiras semanas. Oral exige prescrição e vigilância de pressão e edema."},
+{id:"tretinoina",n:"Tretinoína (tópica)",cl:"Retinoide tópico",r:"tv",tags:[],m:"Vitanol-A",cm:["tretinoina"],single:false,
+ ind:"Acne; fotoenvelhecimento.",pos:"Aplicar à noite, camada fina, na pele seca.",ci:"Gestação; eczema; queimadura solar.",al:"Irritação no início; filtro solar diário."},
+{id:"adapaleno",n:"Adapaleno",cl:"Retinoide tópico",r:"tv",tags:[],m:"Differin",cm:["adapaleno"],single:false,
+ ind:"Acne.",pos:"1 vez ao dia à noite.",ci:"Gestação.",al:"Irritação inicial; filtro solar."},
+{id:"peroxbenz",n:"Peróxido de benzoíla",cl:"Antiacne tópico",r:"mip",tags:[],m:"Solugel, Benzac",cm:["peroxido de benzoila"],single:false,
+ ind:"Acne leve a moderada.",pos:"1 a 2 vezes ao dia.",ci:"Hipersensibilidade.",al:"Descolore tecidos e cabelo."},
+{id:"cetoconazol_top",n:"Cetoconazol (creme e xampu)",cl:"Antifúngico tópico",r:"tvmip",tags:[],m:"Nizoral",cm:["cetoconazol"],single:false,
+ ind:"Micoses de pele, pitiríase versicolor, dermatite seborreica, caspa.",pos:"Creme: 1 a 2 vezes ao dia. Xampu: 2 vezes por semana, deixar agir 3 a 5 min.",ci:"Hipersensibilidade.",al:"Manter 1 a 2 semanas após a melhora."},
+{id:"clotrimazol",n:"Clotrimazol (creme vaginal e dérmico)",cl:"Antifúngico tópico",r:"tvmip",tags:[],m:"Canesten, Gino-Canesten",cm:["clotrimazol"],single:false,
+ ind:"Candidíase vaginal; micoses de pele.",pos:"Vaginal: 1 aplicador à noite por 6 a 7 dias (ou dose única conforme apresentação).",ci:"Hipersensibilidade.",al:"Primeiro episódio, gestação ou recorrência (4 ou mais por ano): encaminhar."},
+{id:"miconazol",n:"Miconazol (creme vaginal, gel oral e dérmico)",cl:"Antifúngico tópico",r:"tvmip",tags:["micon"],m:"Gyno-Daktarin, Daktarin",cm:["miconazol"],single:false,
+ ind:"Candidíase vaginal e oral; micoses de pele.",pos:"Vaginal: 1 aplicador à noite por 7 a 14 dias. Gel oral: conforme idade.",ci:"Gel oral em menores de 4 meses (risco de engasgo).",al:"O gel oral é absorvido e potencializa muito a varfarina."},
+{id:"timolol",n:"Timolol (colírio)",cl:"Betabloqueador oftálmico",r:"tv",tags:["bbns"],m:"Timoptol",cm:["timolol"],single:false,
+ ind:"Glaucoma; hipertensão ocular.",pos:"1 gota 2 vezes ao dia (0,25% ou 0,5%).",ci:"Asma, DPOC grave; bradicardia; bloqueio AV.",al:"É absorvido: pode causar broncoespasmo em asmáticos. Ocluir o canto do olho por 1 min."},
+{id:"latanoprosta",n:"Latanoprosta (colírio)",cl:"Análogo de prostaglandina oftálmico",r:"tv",tags:[],m:"Xalatan",cm:["latanoprosta"],single:false,
+ ind:"Glaucoma de ângulo aberto; hipertensão ocular.",pos:"1 gota à noite.",ci:"Hipersensibilidade.",al:"Escurece a íris e alonga cílios. Frasco fechado na geladeira; aberto até 6 semanas."},
+{id:"tobradex",n:"Tobramicina + dexametasona (colírio)",cl:"Antibiótico + corticoide oftálmico",r:"atm",tags:[],m:"Tobradex",cm:["tobramicina"],single:false,
+ ind:"Inflamação ocular com infecção bacteriana ou risco de infecção.",pos:"1 a 2 gotas a cada 4 a 6 h.",ci:"Ceratite herpética; infecções fúngicas ou virais oculares.",al:"Corticoide ocular só com acompanhamento oftalmológico."},
+{id:"lagrima",n:"Lágrima artificial (carmelose, hialuronato)",cl:"Lubrificante ocular",r:"mip",tags:[],m:"Lacrifilm, Systane, Hyabak",cm:["carmelose"],single:false,
+ ind:"Olho seco; irritação ocular.",pos:"1 a 2 gotas várias vezes ao dia.",ci:"Hipersensibilidade.",al:"Prefira sem conservante para uso frequente. Olho vermelho com dor ou baixa visual: encaminhar."},
+
+// ---------- Urologia ----------
+{id:"oxibutinina",n:"Oxibutinina",cl:"Antimuscarínico urinário",r:"tv",tags:["snc"],m:"Retemic",cm:["oxibutinina"],single:true,
+ ind:"Bexiga hiperativa; enurese.",pos:"5 mg 2 a 3 vezes ao dia (máximo de 20 mg/dia).",ci:"Glaucoma de ângulo fechado; retenção urinária; miastenia gravis.",al:"Boca seca e confusão em idosos."},
+{id:"solifenacina",n:"Solifenacina",cl:"Antimuscarínico urinário",r:"tv",tags:[],m:"Vesicare",cm:["solifenacina"],single:true,
+ ind:"Bexiga hiperativa.",pos:"5 a 10 mg 1 vez ao dia.",ci:"Retenção urinária; glaucoma de ângulo fechado; miastenia.",al:"Constipação e boca seca."},
+{id:"dutasterida",n:"Dutasterida",cl:"Inibidor da 5-alfa-redutase",r:"tv",tags:[],m:"Avodart",cm:["dutasterida"],single:false,
+ ind:"Hiperplasia prostática benigna.",pos:"0,5 mg 1 vez ao dia.",ci:"Mulheres e crianças.",al:"Reduz o PSA em cerca de 50%. Não abrir a cápsula."},
+{id:"fenazopiridina",n:"Fenazopiridina",cl:"Analgésico urinário",r:"tvmip",tags:[],m:"Pyridium",cm:["fenazopiridina"],single:true,
+ ind:"Alívio da dor e ardência ao urinar.",pos:"200 mg 3 vezes ao dia, por até 2 dias.",ci:"Insuficiência renal ou hepática; deficiência de G6PD.",al:"Não trata a infecção. Urina laranja-avermelhada."},
+
+// ---------- Reumatologia, gota e oncologia oral ----------
+{id:"metotrexato",n:"Metotrexato (oral)",cl:"Imunossupressor e antimetabólito",r:"tv",tags:["mtx"],m:"Tecnomet",cm:["metotrexato"],single:true,
+ ind:"Artrite reumatoide; psoríase; outras doenças autoimunes.",pos:"7,5 a 25 mg UMA VEZ POR SEMANA, no mesmo dia, com ácido fólico em outro dia.",ci:"Gestação; lactação; hepatopatia; etilismo; insuficiência renal grave; discrasias sanguíneas.",al:"Erro grave e fatal: dose diária em vez de semanal. Confirme o dia da semana com o paciente."},
+{id:"febuxostate",n:"Febuxostate",cl:"Inibidor da xantina oxidase",r:"tv",tags:[],m:"Feburic",cm:["febuxostate"],single:true,
+ ind:"Gota crônica com hiperuricemia.",pos:"80 mg 1 vez ao dia (até 120 mg).",ci:"Uso de azatioprina ou mercaptopurina.",al:"Cautela em doença cardiovascular estabelecida."},
+{id:"tamoxifeno",n:"Tamoxifeno",cl:"Antiestrogênico (modulador seletivo do receptor de estrogênio)",r:"tv",tags:["tamox"],m:"Nolvadex",cm:["tamoxifeno"],single:true,
+ ind:"Câncer de mama com receptor hormonal positivo; redução de risco.",pos:"20 mg 1 vez ao dia por 5 a 10 anos.",ci:"Gestação; histórico de trombose (em redução de risco).",al:"Sangramento vaginal anormal: avaliar. Paroxetina e fluoxetina reduzem a eficácia."},
+{id:"anastrozol",n:"Anastrozol",cl:"Inibidor da aromatase",r:"tv",tags:[],m:"Arimidex",cm:["anastrozol"],single:true,
+ ind:"Câncer de mama com receptor hormonal positivo na pós-menopausa.",pos:"1 mg 1 vez ao dia.",ci:"Pré-menopausa; gestação.",al:"Dor articular e perda óssea: cálcio, vitamina D e densitometria."},
+{id:"letrozol",n:"Letrozol",cl:"Inibidor da aromatase",r:"tv",tags:[],m:"Femara",cm:["letrozol"],single:true,
+ ind:"Câncer de mama com receptor hormonal positivo na pós-menopausa; indução de ovulação (uso especializado).",pos:"2,5 mg 1 vez ao dia.",ci:"Pré-menopausa (no câncer); gestação.",al:"Mesmos cuidados do anastrozol."},
+{id:"capecitabina",n:"Capecitabina",cl:"Antineoplásico oral (fluoropirimidina)",r:"tv",tags:["cape"],m:"Xeloda",cm:["capecitabina"],single:true,
+ ind:"Câncer colorretal, de mama e gástrico.",pos:"Conforme protocolo (ex.: 1.000 a 1.250 mg/m² 2 vezes ao dia por 14 dias, a cada 21 dias), 30 min após as refeições.",ci:"Deficiência de DPD; insuficiência renal grave; uso de brivudina.",al:"Síndrome mão-pé, diarreia, mucosite: comunicar a equipe. Potencializa muito a varfarina."},
+
+// ---------- Saúde sexual e tabagismo ----------
+{id:"nicotina",n:"Nicotina (adesivo, goma, pastilha)",cl:"Terapia de reposição de nicotina",r:"mip",tags:[],m:"Niquitin, Nicorette",cm:["nicotina"],single:false,
+ ind:"Tratamento do tabagismo.",pos:"Adesivo: 21 mg/dia (mais de 20 cigarros/dia), reduzindo para 14 e 7 mg a cada 4 semanas. Goma ou pastilha: 2 a 4 mg ao sentir vontade (máximo de 24 unidades/dia).",ci:"Infarto ou AVC recentes; arritmia grave (relativas).",al:"Não fumar com o adesivo. Mascar a goma devagar e deixar entre a bochecha e a gengiva."}
+);
+
+/* Ajustes de tags em itens já existentes */
+(function(){
+  const add=(id,...t)=>{const d=DRUGS.find(x=>x.id===id); if(d) for(const x of t) if(!d.tags.includes(x)) d.tags.push(x);};
+  add("ciprofloxacino","inib1a2");
+  add("claritromicina","inib3a4f");
+  add("propranolol","bbns");
+  add("carbamazepina","indutor3a4");
+  add("fluconazol","inib3a4");
+  add("sinvastatina","sub3a4");
+  // regras antigas de "claritro" passam a valer para todos os inibidores potentes do CYP3A4
+  for(const r of RULES){ for(const k of ["a","b"]) r[k]=r[k].map(t=>t==="claritro"?"inib3a4f":t); }
+})();
+
+Object.assign(TAGLBL,{inib3a4f:"inibidores potentes do CYP3A4 (claritromicina, itraconazol)",tiza:"tizanidina",inib1a2:"inibidores do CYP1A2 (ciprofloxacino, fluvoxamina)",triptana:"triptanas",indutor3a4:"indutores enzimáticos",sub3a4:"substratos sensíveis do CYP3A4",arni:"sacubitril-valsartana",amio:"amiodarona",digox:"digoxina",fibrato:"fibratos",insulina:"insulinas",orli:"orlistate",bisf:"bisfosfonatos",prot:"ácido tranexâmico",simpat:"simpaticomiméticos",mtx:"metotrexato",tamox:"tamoxifeno",cape:"capecitabina",micon:"miconazol",amoxi:"amoxicilina",alca:"diuréticos de alça",indutor:"indutores enzimáticos",estim:"psicoestimulantes",alop:"alopurinol",statin:"estatinas",bcc_nd:"diltiazem"});
+
+RULES.push(
+ {a:["tiza"],b:["inib1a2"],sev:"ci",ef:"Aumento de 10 a 30 vezes da tizanidina: hipotensão grave e sedação.",cd:"Associação contraindicada."},
+ {a:["arni"],b:["ieca"],sev:"ci",ef:"Angioedema grave.",cd:"Contraindicada; intervalo de 36 h entre um e outro."},
+ {a:["midaz_dummy"],b:["x"],sev:"m",ef:"",cd:""},
+ {a:["sub3a4"],b:["inib3a4f"],sev:"g",ef:"Aumento acentuado do fármaco (midazolam, ticagrelor, sinvastatina e outros).",cd:"Evitar; procurar alternativa ao inibidor."},
+ {a:["horm"],b:["indutor3a4"],sev:"g",ef:"Falha do contraceptivo hormonal por indução enzimática.",cd:"Método adicional ou não hormonal (DIU), inclusive por algumas semanas após suspender o indutor."},
+ {a:["triptana"],b:["isrs","irsn"],sev:"m",ef:"Risco de síndrome serotoninérgica (baixo, mas descrito).",cd:"Associação usual; orientar sinais de alerta."},
+ {a:["amio"],b:["varf"],sev:"g",ef:"Aumento importante do INR.",cd:"O prescritor costuma reduzir a varfarina; INR frequente."},
+ {a:["amio"],b:["digox"],sev:"g",ef:"Aumento da digoxina e risco de intoxicação.",cd:"Reduzir a digoxina e monitorar."},
+ {a:["amio"],b:["sinva"],sev:"m",ef:"Aumento da sinvastatina: miopatia.",cd:"Limitar a sinvastatina a 20 mg/dia."},
+ {a:["amio","bcc_nd"],b:["bb"],sev:"m",ef:"Bradicardia e bloqueio AV.",cd:"Monitorar frequência cardíaca."},
+ {a:["digox"],b:["inib3a4f","bcc_nd"],sev:"g",ef:"Aumento da digoxina.",cd:"Monitorar sinais de intoxicação; avaliar nível sérico."},
+ {a:["digox"],b:["alca","tiaz"],sev:"m",ef:"Hipocalemia aumenta a toxicidade da digoxina.",cd:"Monitorar potássio."},
+ {a:["fibrato"],b:["statin"],sev:"m",ef:"Risco aumentado de miopatia.",cd:"Orientar dor muscular; o fenofibrato é o fibrato preferido com estatina."},
+ {a:["fibrato"],b:["varf"],sev:"m",ef:"Aumento do INR.",cd:"Monitorar INR."},
+ {a:["insulina"],b:["bb"],sev:"m",ef:"O betabloqueador mascara sinais de hipoglicemia.",cd:"Orientar a medir a glicemia em caso de sudorese ou mal-estar."},
+ {a:["insulina"],b:["glp1","su"],sev:"m",ef:"Hipoglicemia.",cd:"Ajuste de doses pelo prescritor."},
+ {a:["alcool"],b:["insulina"],sev:"m",ef:"Hipoglicemia tardia.",cd:"Não beber em jejum; comer ao beber."},
+ {a:["orli"],b:["levot"],sev:"m",ef:"Redução da absorção da levotiroxina.",cd:"Separar por pelo menos 4 h e monitorar TSH."},
+ {a:["orli"],b:["varf"],sev:"m",ef:"Alteração do INR (menor absorção de vitamina K).",cd:"Monitorar INR."},
+ {a:["bisf"],b:["quel"],sev:"m",ef:"O cálcio, o ferro e os antiácidos impedem a absorção do bisfosfonato.",cd:"Tomar o bisfosfonato em jejum e o cálcio só 30 min depois (melhor em outro horário)."},
+ {a:["prot"],b:["horm"],sev:"m",ef:"Risco somado de trombose.",cd:"Avaliar com o prescritor."},
+ {a:["simpat"],b:["raa","bb","tiaz"],sev:"m",ef:"Descongestionantes elevam a pressão e reduzem o efeito anti-hipertensivo.",cd:"Evitar em hipertensos; preferir soro fisiológico nasal e anti-histamínico isolado."},
+ {a:["mtx"],b:["smx"],sev:"ci",ef:"Toxicidade medular grave (ambos antagonizam o folato).",cd:"Evitar a associação."},
+ {a:["mtx"],b:["aine"],sev:"m",ef:"Aumento do metotrexato (relevante em doses altas ou insuficiência renal).",cd:"Em doses baixas semanais costuma ser tolerado com monitorização; evitar automedicação com AINE."},
+ {a:["mtx"],b:["ibp"],sev:"m",ef:"Possível aumento do metotrexato.",cd:"Monitorar, principalmente em doses altas."},
+ {a:["tamox"],b:["inib2d6"],sev:"g",ef:"Redução da ativação do tamoxifeno e da sua eficácia.",cd:"Preferir antidepressivos sem inibição forte do CYP2D6 (ex.: venlafaxina, escitalopram)."},
+ {a:["cape"],b:["varf"],sev:"g",ef:"Aumento acentuado do INR, com sangramentos graves.",cd:"INR muito frequente ou trocar o anticoagulante."},
+ {a:["micon"],b:["varf"],sev:"g",ef:"O miconazol (inclusive gel oral e creme vaginal) aumenta muito o INR.",cd:"Evitar; se usado, INR em poucos dias."},
+ {a:["indutor3a4"],b:["varf","doac"],sev:"g",ef:"Redução do efeito anticoagulante.",cd:"Evitar ou monitorar de perto."}
+);
+// remove regra de preenchimento
+for(let i=RULES.length-1;i>=0;i--) if(RULES[i].a[0]==="midaz_dummy") RULES.splice(i,1);
+
+</script>
+<script>
+"use strict";
+function h(tag,props,...kids){
+  const e=document.createElement(tag);
+  if(props) for(const [k,v] of Object.entries(props)){
+    if(v==null||v===false) continue;
+    if(k==="class") e.className=v; else if(k==="text") e.textContent=v;
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k,v===true?"":v);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; e.append(c instanceof Node?c:document.createTextNode(String(c))); }
+  return e;
+}
+const $=id=>document.getElementById(id);
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const normK=s=>norm(s).replace(/[^a-z0-9]/g,"");
+const SEVORD={ci:0,g:1,m:2}, SEVLBL={ci:"Contraindicada",g:"Grave",m:"Moderada"};
+const BYID=Object.fromEntries(DRUGS.map(d=>[d.id,d]));
+for(const p of PSEUDO) BYID[p.id]=p;
+let LS=null; try{LS=window.localStorage;}catch(e){}
+const lsGet=(k,d)=>{try{const v=LS&&LS.getItem(k);return v==null?d:v;}catch(e){return d;}};
+const lsSet=(k,v)=>{try{LS&&LS.setItem(k,v);}catch(e){}};
+
+const S={sel:null,q:"",ia:[],cmed:null,cmedMeta:null,db:null,assets:null,canEdit:false,rate:lsGet("icms","17"),pq:"",pfTipo:"",pfConc:""};
+
+function stripeClass(r){return r==="mip"?"s-mip":(r==="b1"||r==="b2")?"s-b":r==="a3"?"s-a":(r==="c1"||r==="c2"||r==="rce_a2")?"s-c":"s-tv";}
+function recBadge(r){
+  const R=REC[r]; const sw={mip:"var(--t-mip)",tv:"var(--t-red)",b:"var(--t-blue)",a:"var(--t-yellow)",c:"var(--t-white)"}[R.cor];
+  const sp=h("span",{class:"sw"}); sp.style.background=sw; if(R.cor==="c") sp.style.boxShadow="inset 0 0 0 1px var(--muted)";
+  return h("span",{class:"badge"},sp,R.t);
+}
+
+/* ---------- interações ---------- */
+function interactionsBetween(x,y){
+  if(x.id===y.id) return [];
+  const out=[];
+  for(const r of RULES){
+    const xa=r.a.some(t=>x.tags.includes(t)), xb=r.b.some(t=>x.tags.includes(t));
+    const ya=r.a.some(t=>y.tags.includes(t)), yb=r.b.some(t=>y.tags.includes(t));
+    if((xa&&yb)||(xb&&ya)) out.push(r);
+  }
+  // mantém a regra mais específica primeiro e remove duplicatas de mesma gravidade e efeito genérico
+  out.sort((a,b)=>SEVORD[a.sev]-SEVORD[b.sev]);
+  return out;
+}
+function rulesFor(d){
+  const out=[];
+  for(const r of RULES){
+    const inA=r.a.some(t=>d.tags.includes(t)), inB=r.b.some(t=>d.tags.includes(t));
+    if(!inA&&!inB) continue;
+    const otherTags=inA?r.b:r.a;
+    const others=[...DRUGS,...PSEUDO].filter(o=>o.id!==d.id&&otherTags.some(t=>o.tags.includes(t)));
+    if(!others.length) continue;
+    out.push({r,others,label:otherTags.map(t=>TAGLBL[t]||t).join(", ")});
+  }
+  return out.sort((a,b)=>SEVORD[a.r.sev]-SEVORD[b.r.sev]);
+}
+
+/* ---------- CMED ---------- */
+function cmedRowsFor(d){
+  if(!S.cmed||!d.cm) return [];
+  const toks=d.cm.map(norm);
+  return S.cmed.rows.filter(r=>{const s=r._s;if(!toks.every(t=>s.includes(t)))return false;if(d.single&&/;|\+| e /.test(s.replace(/^[^;+]*$/,"")))return false;return true;});
+}
+function rateIdx(){const i=S.cmed?S.cmed.rates.indexOf(S.rate):-1;return i>=0?i:(S.cmed?S.cmed.rates.findIndex(r=>!/alc/i.test(r)):0);}
+function pmc(r){const v=r[8][rateIdx()];return typeof v==="number"&&v>0?v:null;}
+const brl=v=>v==null?"—":v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+function qtyOf(apr){const m=[...String(apr).matchAll(/X\s*(\d+)(?!\s*(?:ML|G\b|L\b|MG))/gi)];return m.length?+m[m.length-1][1]:null;}
+function concOf(apr){const m=String(apr).match(/(\d+(?:[,.]\d+)?\s*(?:MG|MCG|G|UI|%)(?:\s*\/\s*\d*\s*(?:ML|G|DOSE|GOTA))?)/i);return m?m[1].replace(/\s+/g," ").toUpperCase():"";}
+function tipoClass(t){const n=norm(t);return n.includes("refer")?"ref":n.includes("gener")?"gen":n.includes("similar")?"sim":"";}
+
+function priceTable(rows,limit){
+  const ri=rateIdx();
+  const enriched=rows.map(r=>{const p=pmc(r),q=qtyOf(r[3]);return {r,p,q,u:p&&q?p/q:null,c:concOf(r[3])};}).filter(x=>x.p!=null);
+  enriched.sort((a,b)=>(a.u??a.p)-(b.u??b.p));
+  const shown=limit?enriched.slice(0,limit):enriched;
+  const best=new Map(); for(const x of enriched){const k=x.c+"|"+x.q;if(!best.has(k))best.set(k,x);}
+  if(!shown.length) return h("div",{class:"empty",text:"Nenhum preço encontrado para esta alíquota."});
+  return h("div",{class:"tw"},h("table",null,
+    h("thead",null,h("tr",null,h("th",{text:"Produto"}),h("th",{text:"Laboratório"}),h("th",{text:"Tipo"}),h("th",{text:"Apresentação"}),h("th",{class:"num",text:"PMC "+S.rate+"%"}),h("th",{class:"num",text:"Por unidade"}))),
+    h("tbody",null,shown.map(x=>h("tr",{class:best.get(x.c+"|"+x.q)===x?"best":null},
+      h("td",null,h("b",{text:x.r[2]})),h("td",{text:x.r[1]}),h("td",null,x.r[4]?h("span",{class:"tp "+tipoClass(x.r[4]),text:x.r[4]}):""),
+      h("td",{text:x.r[3]}),h("td",{class:"num",text:brl(x.p)}),h("td",{class:"num",text:x.u?brl(x.u):"—"}))))));
+}
+
+/* ---------- Consulta ---------- */
+function searchDrugs(q){
+  const n=norm(q).trim(); if(!n) return DRUGS.slice().sort((a,b)=>a.n.localeCompare(b.n,"pt-BR"));
+  const sc=d=>{const name=norm(d.n),m=norm(d.m);if(name.startsWith(n))return 0;if(name.includes(n))return 1;if(m.includes(n))return 2;if(norm(d.cl).includes(n))return 3;if(norm(d.ind).includes(n))return 4;return 9;};
+  return DRUGS.map(d=>[sc(d),d]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].n.length-b[1].n.length||a[1].n.localeCompare(b[1].n,"pt-BR")).map(x=>x[1]);
+}
+function cmedBrandHits(q){
+  if(!S.cmed) return [];
+  const n=norm(q).trim(); if(n.length<3) return [];
+  const seen=new Map();
+  for(const r of S.cmed.rows){ if(r._p.startsWith(n)&&r._p!==r._s&&!seen.has(r[2])) seen.set(r[2],r[0]); if(seen.size>=8) break; }
+  return [...seen].map(([prod,sub])=>({prod,sub}));
+}
+const views={};
+views.consulta={
+  mount(root){
+    const q=h("input",{class:"search",id:"q",type:"search",placeholder:"Princípio ativo, marca, classe ou indicação (ex.: losartana, Rivotril, azia)",value:S.q,autocomplete:"off"});
+    q.addEventListener("input",()=>{S.q=q.value;this.list();});
+    root.append(h("div",{class:"layout"},
+      h("div",{class:"listbox"},h("div",{style:"padding:10px"},q),h("div",{class:"count",id:"cnt"}),h("div",{class:"list",id:"list",role:"listbox","aria-label":"Medicamentos"})),
+      h("div",{id:"detail"})));
+    this.list();
+    if(!S.sel){const l=searchDrugs(S.q);S.sel=l[0]&&l[0].id;}
+    this.detail();
+  },
+  list(){
+    const l=searchDrugs(S.q), box=$("list"); if(!box) return;
+    if(l.length&&!l.some(d=>d.id===S.sel)){S.sel=l[0].id;queueMicrotask(()=>this.detail());}
+    $("cnt").textContent=l.length+" de "+DRUGS.length+" princípios ativos";
+    const items=l.map(d=>h("button",{class:"item",type:"button",role:"option","aria-selected":String(d.id===S.sel),onclick:()=>{S.sel=d.id;this.list();this.detail();if(innerWidth<900)$("detail").scrollIntoView({behavior:"smooth"});}},
+      h("span",{class:"stripe "+stripeClass(d.r)}),h("span",null,h("b",{text:d.n}),h("small",{text:[d.m,d.cl].filter(Boolean).join(" · ")}))));
+    const hits=cmedBrandHits(S.q).filter(x=>!l.some(d=>norm(d.m).includes(norm(x.prod))));
+    if(hits.length) items.push(h("div",{class:"count",text:"Na tabela CMED"}),...hits.map(x=>h("button",{class:"item",type:"button",onclick:()=>{S.pq=x.prod;location.hash="#precos";}},h("span",{class:"stripe s-mip"}),h("span",null,h("b",{text:x.prod}),h("small",{text:x.sub})))));
+    if(!items.length) items.push(h("div",{class:"empty",text:"Nada encontrado. Importe a tabela CMED para buscar também por marca comercial."}));
+    box.replaceChildren(...items);
+  },
+  detail(){
+    const box=$("detail"); if(!box) return;
+    const d=BYID[S.sel]; if(!d){box.replaceChildren(h("div",{class:"empty",text:"Selecione um medicamento."}));return;}
+    const R=REC[d.r];
+    const ias=rulesFor(d);
+    const same=DRUGS.filter(o=>o.cl===d.cl&&o.id!==d.id);
+    const rows=cmedRowsFor(d);
+    box.replaceChildren(h("article",{class:"card"},
+      h("div",{class:"dhead"},
+        h("div",null,h("h2",{text:d.n}),h("div",{class:"cls",text:d.cl}),d.m?h("div",{class:"brands"},h("span",{class:"note",text:"Marcas conhecidas: "}),d.m):null),
+        h("div",{style:"display:grid;gap:8px;justify-items:end"},recBadge(d.r),
+          h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"},
+            h("button",{class:"btn ghost",type:"button",onclick:()=>{if(!S.ia.includes(d.id))S.ia.push(d.id);location.hash="#interacoes";}},"Checar interações"),
+            h("a",{class:"btn",href:"https://consultas.anvisa.gov.br/#/bulario/q/?nomeProduto="+encodeURIComponent(d.n.split(/[(+\/]/)[0].trim()),target:"_blank",rel:"noopener"},"Bula na ANVISA")))),
+      h("div",{class:"grid"},
+        h("div",{class:"sec"},h("h3",{text:"Indicações"}),h("p",{text:d.ind})),
+        h("div",{class:"sec"},h("h3",{text:"Contraindicações"}),h("p",{text:d.ci})),
+        h("div",{class:"sec full"},h("h3",{text:"Posologia usual (adulto)"}),h("p",{text:d.pos})),
+        d.ped?h("div",{class:"sec full"},h("h3",{text:"Pediatria"}),h("p",{text:d.ped})):null,
+        h("div",{class:"sec full alert"},h("h3",{text:"Orientação no balcão"}),h("p",{text:d.al})),
+        h("div",{class:"sec full"},h("h3",{text:"Receita e validade"}),
+          h("div",{class:"rec"},
+            h("div",null,h("span",{text:"Documento"}),R.doc),h("div",null,h("span",{text:"Retenção"}),R.ret),
+            h("div",null,h("span",{text:"Validade"}),R.val),h("div",null,h("span",{text:"Quantidade máxima"}),R.qtd)),
+          h("p",{class:"note",style:"margin-top:6px",text:R.obs})),
+        h("div",{class:"sec full"},h("h3",{text:"Interações relevantes"}),
+          ias.length?h("div",{class:"ia"},ias.map(x=>h("div",{class:"row"},h("span",{class:"sev "+x.r.sev,text:SEVLBL[x.r.sev]}),
+            h("div",null,h("b",{text:"Com "+x.label}),h("p",{text:x.r.ef+" "+x.r.cd}),
+              h("div",{class:"chips",style:"margin-top:6px"},x.others.slice(0,10).map(o=>h("button",{class:"chip",type:"button",onclick:()=>{if(BYID[o.id]&&DRUGS.includes(o)){S.sel=o.id;views.consulta.list();views.consulta.detail();}},text:o.n}))))))):h("p",{class:"note",text:"Nenhuma interação relevante registrada nesta base. Confira a bula."})),
+        same.length?h("div",{class:"sec full"},h("h3",{text:"Outros da mesma classe (troca exige o prescritor)"}),h("div",{class:"chips"},same.map(o=>h("button",{class:"chip",type:"button",onclick:()=>{S.sel=o.id;views.consulta.list();views.consulta.detail();},text:o.n})))):null,
+        h("div",{class:"sec full"},h("h3",{text:"Marcas, genéricos e preços (CMED)"}),
+          !S.cmed?h("p",{class:"note"},"Importe a tabela de preços da CMED na aba ",h("a",{href:"#precos",text:"Marcas e preços"})," para ver aqui todas as marcas, genéricos e similares com o preço máximo ao consumidor."):
+          rows.length?h("div",null,h("p",{class:"note",style:"margin:0 0 8px",text:rows.length+" apresentações. As 10 de menor preço por unidade (linhas destacadas: menor preço para cada concentração e embalagem):"}),priceTable(rows,10),
+            h("p",{style:"margin-top:8px"},h("a",{href:"#precos",onclick:()=>{S.pq=d.cm.join(" ");},text:"Ver todas as apresentações"}))):
+          h("p",{class:"note",text:"Nenhuma apresentação encontrada na tabela importada para este princípio ativo."}))),
+      h("p",{class:"disc",text:"Conteúdo de apoio à dispensação, resumido de bulas e normas sanitárias. Doses podem variar por apresentação e situação clínica: confirme sempre na bula vigente do produto e na prescrição."})));
+  }
+};
+
+/* ---------- Interações ---------- */
+views.interacoes={
+  mount(root){
+    const inp=h("input",{class:"search",id:"iaq",type:"search",placeholder:"Adicione medicamentos (ex.: varfarina, ibuprofeno, álcool)",autocomplete:"off"});
+    const ul=h("ul",{hidden:true,id:"iasug"});
+    const sugg=h("div",{class:"sugg"},inp,ul);
+    const pick=d=>{if(!S.ia.includes(d.id))S.ia.push(d.id);inp.value="";ul.hidden=true;this.update();inp.focus();};
+    inp.addEventListener("input",()=>{
+      const n=norm(inp.value).trim(); if(!n){ul.hidden=true;return;}
+      const res=[...DRUGS,...PSEUDO].filter(d=>norm(d.n).includes(n)||norm(d.m||"").includes(n)||(d.id==="alcool"&&"alcool bebida cerveja vinho".includes(n))).slice(0,10);
+      ul.replaceChildren(...res.map(d=>h("li",null,h("button",{type:"button",onclick:()=>pick(d)},d.n,d.m?h("span",{class:"note",text:" · "+d.m}):null))));
+      ul.hidden=!res.length;
+    });
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){const b=ul.querySelector("button");if(b){e.preventDefault();b.click();}}if(e.key==="Escape")ul.hidden=true;});
+    root.append(h("div",{class:"card"},
+      h("h2",{text:"Checagem de interações",style:"font-size:24px;margin-bottom:4px"}),
+      h("p",{class:"note",style:"margin:0 0 12px",text:"Monte a lista do paciente, inclusive o que ele já usa em casa. As combinações são checadas duas a duas."}),
+      sugg,h("div",{class:"picked",id:"picked"}),h("div",{id:"iares"})));
+    this.update();
+  },
+  update(){
+    const pk=$("picked"); if(!pk) return;
+    pk.replaceChildren(...S.ia.map(id=>{const d=BYID[id];return h("span",null,d.n,h("button",{type:"button","aria-label":"Remover "+d.n,onclick:()=>{S.ia=S.ia.filter(x=>x!==id);this.update();},text:"×"}));}),
+      S.ia.length?h("button",{class:"btn ghost",type:"button",onclick:()=>{S.ia=[];this.update();},text:"Limpar"}):null);
+    const out=[];
+    for(let i=0;i<S.ia.length;i++)for(let j=i+1;j<S.ia.length;j++){
+      const a=BYID[S.ia[i]],b=BYID[S.ia[j]];
+      const rs=interactionsBetween(a,b);
+      // remove regra genérica quando já há uma mais grave com mesmo par
+      const seen=new Set();
+      for(const r of rs){const k=r.ef;if(seen.has(k))continue;seen.add(k);out.push({a,b,r});}
+    }
+    out.sort((x,y)=>SEVORD[x.r.sev]-SEVORD[y.r.sev]);
+    const res=$("iares");
+    if(S.ia.length<2){res.replaceChildren(h("div",{class:"empty",text:"Adicione pelo menos dois itens."}));return;}
+    const counts={ci:0,g:0,m:0}; out.forEach(x=>counts[x.r.sev]++);
+    res.replaceChildren(
+      h("p",{style:"font-weight:600",text:out.length?`${out.length} interação(ões): ${counts.ci} contraindicada(s), ${counts.g} grave(s), ${counts.m} moderada(s).`:"Nenhuma interação registrada nesta base entre os itens. Isso não exclui interações menos frequentes: confira a bula."}),
+      h("div",{class:"ia"},out.map(x=>h("div",{class:"row"},h("span",{class:"sev "+x.r.sev,text:SEVLBL[x.r.sev]}),
+        h("div",null,h("b",{text:x.a.n+" + "+x.b.n}),h("p",{text:x.r.ef}),h("p",null,h("b",{text:"Conduta: "}),x.r.cd))))),
+      h("p",{class:"disc",text:"Base de interações clinicamente relevantes para o varejo, não exaustiva. Na dúvida, contate o prescritor e registre a intervenção farmacêutica."}));
+  }
+};
+
+/* ---------- Preços CMED ---------- */
+views.precos={
+  mount(root){
+    root.append(h("div",{class:"card"},h("h2",{text:"Marcas, genéricos e preços máximos (CMED)",style:"font-size:24px"}),h("div",{id:"pimp"}),h("div",{id:"pbody"})));
+    this.update();
+  },
+  update(){
+    const imp=$("pimp"); if(!imp) return;
+    const meta=S.cmedMeta;
+    const file=h("input",{type:"file",id:"pfile",accept:".xls,.xlsx,.csv",style:"display:none",onchange:e=>{const f=e.target.files[0];if(f)importCMED(f);}});
+    const drop=h("div",{class:"drop"},
+      h("p",{style:"margin:0 0 6px;font-weight:600",text:S.cmed?"Atualizar a tabela":"Importe a lista de preços da CMED"}),
+      h("ol",{class:"steps"},
+        h("li",null,"Baixe a planilha de preços ao consumidor (PMC) em ",h("a",{href:"https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos",target:"_blank",rel:"noopener",text:"gov.br/anvisa › CMED › Preços"}),"."),
+        h("li",{text:"Arraste o arquivo (.xls, .xlsx ou .csv) para cá ou clique em Escolher arquivo."}),
+        h("li",{text:"A CMED atualiza a lista todo mês: repita a importação quando sair uma nova."})),
+      h("div",{style:"margin-top:10px"},h("button",{class:"btn",type:"button",onclick:()=>file.click(),text:"Escolher arquivo"}),file),
+      h("p",{class:"note",id:"pmsg",text:meta?`Em uso: ${meta.file} · ${meta.rows.toLocaleString("pt-BR")} apresentações · importada em ${new Date(meta.importedAt).toLocaleDateString("pt-BR")}`:(S.assets?"A tabela fica salva nesta página para você e quem tiver acesso.":S.local?"A tabela fica salva neste aparelho e funciona sem internet.":"Sem permissão para salvar: a tabela ficará disponível só nesta sessão.")}));
+    drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});
+    drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+    drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");const f=e.dataTransfer.files[0];if(f)importCMED(f);});
+    imp.replaceChildren(S.cmed?h("details",{style:"margin:10px 0"},h("summary",{class:"note",text:"Importar nova versão da tabela ("+(meta?meta.file:"atual")+")"}),drop):drop);
+    const body=$("pbody");
+    if(!S.cmed){body.replaceChildren(h("p",{class:"note",style:"margin-top:14px",text:S.cmedLoading?"Carregando a tabela salva…":"Sem tabela, as fichas mostram só as marcas conhecidas."}));return;}
+    const rateSel=h("select",{id:"rate","aria-label":"Alíquota de ICMS"},S.cmed.rates.map(r=>h("option",{value:r,text:"ICMS "+r+"%"})));
+    rateSel.value=S.cmed.rates.includes(S.rate)?S.rate:S.cmed.rates[rateIdx()];
+    rateSel.addEventListener("change",()=>{S.rate=rateSel.value;lsSet("icms",S.rate);this.results();});
+    const q=h("input",{id:"pq",type:"search",placeholder:"Princípio ativo ou marca (ex.: losartana, Neosaldina)",value:S.pq,style:"flex:1;min-width:240px"});
+    q.addEventListener("input",()=>{S.pq=q.value;S.pfConc="";this.results();});
+    const tipo=h("select",{id:"ptipo","aria-label":"Tipo de produto"},h("option",{value:"",text:"Todos os tipos"}),...[...new Set(S.cmed.rows.map(r=>r[4]).filter(Boolean))].sort().map(t=>h("option",{value:t,text:t})));
+    tipo.value=S.pfTipo; tipo.addEventListener("change",()=>{S.pfTipo=tipo.value;this.results();});
+    body.replaceChildren(h("div",{class:"toolbar"},q,tipo,rateSel),h("div",{id:"pconc"}),h("div",{id:"pres"}),
+      h("div",{class:"disc"},h("p",{style:"margin:0 0 6px",text:"Intercambialidade: o farmacêutico pode trocar o medicamento de referência pelo genérico correspondente, e pelo similar que constar como intercambiável na lista da ANVISA, salvo restrição do prescritor. Prescrição pelo nome do princípio ativo (DCB) admite qualquer um deles. A troca entre princípios ativos diferentes exige o prescritor."}),
+        h("p",{style:"margin:0",text:"PMC é o teto legal de preço ao consumidor para a alíquota de ICMS do seu estado; a drogaria pode vender abaixo dele."})));
+    this.results();
+  },
+  results(){
+    const res=$("pres"); if(!res||!S.cmed) return;
+    const n=norm(S.pq).trim();
+    if(n.length<3){$("pconc").replaceChildren();res.replaceChildren(h("div",{class:"empty",text:"Digite ao menos 3 letras do princípio ativo ou da marca."}));return;}
+    const toks=n.split(/\s+/);
+    let rows=S.cmed.rows.filter(r=>toks.every(t=>r._s.includes(t)||r._p.includes(t)));
+    if(S.pfTipo) rows=rows.filter(r=>r[4]===S.pfTipo);
+    const concs=new Map(); for(const r of rows){const c=concOf(r[3]);if(c)concs.set(c,(concs.get(c)||0)+1);}
+    const top=[...concs].sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]);
+    $("pconc").replaceChildren(top.length>1?h("div",{class:"chips",style:"margin-bottom:10px"},h("span",{class:"note",text:"Concentração:"}),
+      h("button",{class:"chip"+(S.pfConc?"":" on"),type:"button",onclick:()=>{S.pfConc="";this.results();},text:"Todas"}),
+      top.map(c=>h("button",{class:"chip"+(S.pfConc===c?" on":""),type:"button",onclick:()=>{S.pfConc=c;this.results();},text:c}))):"");
+    if(S.pfConc) rows=rows.filter(r=>concOf(r[3])===S.pfConc);
+    const subs=[...new Set(rows.map(r=>r[0]))];
+    res.replaceChildren(rows.length?h("div",null,h("p",{class:"note",text:`${rows.length} apresentações${subs.length>1?" em "+subs.length+" substâncias/associações":" · "+subs[0]}. Ordenado pelo menor preço por unidade${rows.length>300?" (mostrando 300)":""}.`}),priceTable(rows,300)):h("div",{class:"empty",text:"Nada encontrado na tabela importada."}));
+  }
+};
+
+/* ---------- Receitas ---------- */
+views.receitas={
+  mount(root){
+    const order=["mip","tv","atm","glp1","c1","rce_a2","b1","b2","a3","c2"];
+    const colors={mip:"var(--t-mip)",tv:"var(--t-red)",b:"var(--t-blue)",a:"var(--t-yellow)",c:"var(--t-white)"};
+    const tipoSel=h("select",{id:"rt"},order.filter(k=>k!=="mip").map(k=>h("option",{value:k,text:REC[k].t})));
+    const dt=h("input",{id:"rd",type:"date",value:new Date().toISOString().slice(0,10)});
+    const out=h("div",{class:"result",id:"rout","aria-live":"polite"});
+    const calc=()=>{
+      const k=tipoSel.value, d=dt.value; if(!d){out.textContent="";return;}
+      const days={atm:10,glp1:90,c1:30,rce_a2:30,b1:30,b2:30,a3:30,c2:30}[k];
+      if(!days){out.textContent="A norma federal não fixa prazo para a receita simples.";return;}
+      const em=new Date(d+"T12:00:00"); const lim=new Date(em); lim.setDate(lim.getDate()+days);
+      const today=new Date(); today.setHours(12,0,0,0);
+      const left=Math.round((lim-today)/864e5);
+      out.replaceChildren(h("span",{text:`Válida até ${lim.toLocaleDateString("pt-BR")} (${days} dias da emissão). `}),
+        h("span",{style:"color:"+(left>=0?"var(--ok)":"var(--ci)"),text:left>=0?(left===0?"Último dia hoje.":`Faltam ${left} dia(s).`):`Vencida há ${-left} dia(s).`}),
+        k==="atm"?h("div",{class:"note",style:"font-weight:400",text:"Tratamento prolongado com uso contínuo indicado: aquisições em até 90 dias da emissão."}):null);
+    };
+    tipoSel.addEventListener("change",calc); dt.addEventListener("input",calc);
+    root.append(
+      h("div",{class:"card",style:"margin-bottom:18px"},h("h2",{text:"Calcular validade da receita",style:"font-size:22px;margin-bottom:10px"}),
+        h("div",{class:"calc"},h("label",{for:"rt"},"Tipo",tipoSel),h("label",{for:"rd"},"Data de emissão",dt)),out),
+      h("div",{class:"cards2"},order.map(k=>{const R=REC[k];const bar=h("div",{class:"bar"});bar.style.background=colors[R.cor];if(R.cor==="c")bar.style.boxShadow="inset 0 -1px 0 var(--line)";
+        const ex=DRUGS.filter(d=>d.r===k).slice(0,6).map(d=>d.n.split(" (")[0]).join(", ");
+        return h("div",{class:"rcard"},bar,h("div",{class:"in"},h("b",{text:R.t}),
+          h("dl",null,h("dt",{text:"Documento"}),h("dd",{text:R.doc}),h("dt",{text:"Retenção"}),h("dd",{text:R.ret}),h("dt",{text:"Validade"}),h("dd",{text:R.val}),h("dt",{text:"Quantidade"}),h("dd",{text:R.qtd}),ex?h("dt",{text:"Exemplos"}):null,ex?h("dd",{text:ex}):null),
+          h("p",{class:"note",style:"margin:0",text:R.obs})));})),
+      h("div",{class:"card",style:"margin-top:18px"},h("h3",{text:"Notas gerais",style:"margin-bottom:6px"}),
+        h("ul",{style:"margin:0;padding-left:20px"},
+          h("li",{text:"Desde a Lei 13.732/2018 as receitas de controle especial e notificações valem em todo o território nacional; a numeração das notificações passou a ser nacional pelo SNCR."}),
+          h("li",{text:"Desde 30/09/2026 as notificações A, B, B2, de retinoides e de talidomida também podem ser emitidas eletronicamente por plataformas integradas ao SNCR. As receitas em papel continuam válidas."}),
+          h("li",{text:"GLP-1 (semaglutida, liraglutida, dulaglutida, tirzepatida, lixisenatida): retenção obrigatória desde 23/06/2025, receita em 2 vias com validade de 90 dias."}),
+          h("li",{text:"Zolpidem: Notificação de Receita B (azul) em qualquer concentração desde 1º/08/2024."}),
+          h("li",{text:"Validade de suspensões reconstituídas (antibióticos) varia por fabricante: confira a bula do produto dispensado."})),
+        h("p",{class:"disc",text:"Fontes: Portaria SVS/MS 344/1998 e atualizações; RDC 471/2021, RDC 973/2025 e IN 360/2025; RDC 873/2024 (SNCR); Lei 13.732/2018. Normas estaduais e municipais podem acrescentar exigências."})));
+    calc();
+  },
+  update(){}
+};
+
+/* ---------- importação e persistência ---------- */
+function setStat(t){$("cmedstat").textContent=t;}
+function loadXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  return new Promise((ok,no)=>{const s=document.createElement("script");s.src=window.XLSX_LOCAL?"xlsx.full.min.js":"https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";s.onload=ok;s.onerror=()=>no(new Error("Não foi possível carregar o leitor de planilhas."));document.head.append(s);});
+}
+function parseCSV(text){
+  const first=text.slice(0,5000); const delim=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?";":",";
+  const rows=[];let row=[],cur="",q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}
+    else if(c==='"')q=true; else if(c===delim){row.push(cur);cur="";} else if(c==="\n"){row.push(cur.replace(/\r$/,""));rows.push(row);row=[];cur="";} else cur+=c;}
+  if(cur||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+function num(v){if(typeof v==="number")return v;let s=String(v||"").replace(/[^\d,.\-]/g,"");if(!s)return null;if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");const n=parseFloat(s);return isFinite(n)?n:null;}
+async function readTable(file){
+  const nm=file.name.toLowerCase();
+  if(nm.endsWith(".csv")||nm.endsWith(".txt")){
+    const buf=await file.arrayBuffer(); let t=new TextDecoder("utf-8").decode(buf);
+    if(t.includes("\uFFFD")) t=new TextDecoder("iso-8859-1").decode(buf);
+    return parseCSV(t);
+  }
+  await loadXLSX();
+  const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
+}
+function buildCMED(table,fileName){
+  let hi=-1;
+  for(let i=0;i<Math.min(table.length,120);i++){const k=table[i].map(normK);if(k.includes("substancia")&&k.includes("produto")){hi=i;break;}}
+  if(hi<0) throw new Error("Não encontrei as colunas SUBSTÂNCIA e PRODUTO. Confira se é a lista de preços da CMED.");
+  const hdr=table[hi].map(x=>String(x)), k=hdr.map(normK);
+  const col=f=>k.findIndex(f);
+  const C={s:col(x=>x==="substancia"),l:col(x=>x==="laboratorio"),p:col(x=>x==="produto"),a:col(x=>x==="apresentacao"),t:col(x=>x.startsWith("tipodeproduto")),j:col(x=>x==="tarja"),e:col(x=>x==="ean1"||x==="ean"),rh:col(x=>x==="restricaohospitalar")};
+  const pm=[];
+  hdr.forEach((t,i)=>{const m=t.match(/^\s*PMC[\s_]*(\d+)(?:[,._](\d+))?\s*%?\s*(ALC)?/i);if(m&&!/pmvg/i.test(t))pm.push({i,r:m[1]+(m[2]?","+m[2]:"")+(m[3]?" ALC":"")});});
+  if(!pm.length) throw new Error("Não encontrei colunas de PMC. Use a lista de preços ao consumidor (PMC), não a de preços ao governo.");
+  const rows=[];
+  for(let i=hi+1;i<table.length;i++){
+    const r=table[i]; const s=String(r[C.s]||"").trim(), p=String(r[C.p]||"").trim(); if(!s||!p) continue;
+    if(C.rh>=0&&/^sim/i.test(String(r[C.rh]))) continue;
+    rows.push([s,String(r[C.l]||"").trim(),p,String(r[C.a]||"").trim(),C.t>=0?String(r[C.t]||"").trim():"",C.j>=0?String(r[C.j]||"").trim():"",C.e>=0?String(r[C.e]||"").trim():"","",pm.map(x=>num(r[x.i]))]);
+  }
+  if(!rows.length) throw new Error("A planilha não tem linhas de produtos.");
+  return {v:1,file:fileName,at:Date.now(),rates:pm.map(x=>x.r),rows};
+}
+/* armazenamento local (app instalado ou navegador fora do Claude) */
+const IDB={open(){return new Promise((ok,no)=>{try{const r=indexedDB.open("balcao",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);}catch(e){no(e);}});},
+  async get(k){const db=await this.open();return new Promise((ok,no)=>{const t=db.transaction("kv").objectStore("kv").get(k);t.onsuccess=()=>ok(t.result);t.onerror=()=>no(t.error);});},
+  async set(k,v){const db=await this.open();return new Promise((ok,no)=>{const tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=()=>ok();tx.onerror=()=>no(tx.error);});}};
+function indexCMED(d){for(const r of d.rows){r._s=norm(r[0]);r._p=norm(r[2]);}return d;}
+async function importCMED(file){
+  const msg=()=>$("pmsg");
+  const say=t=>{const m=msg();if(m)m.textContent=t;setStat(t);};
+  try{
+    say("Lendo "+file.name+"…");
+    const table=await readTable(file);
+    say("Organizando a tabela…");
+    const data=buildCMED(table,file.name);
+    S.cmed=indexCMED(JSON.parse(JSON.stringify(data)));
+    S.cmedMeta={file:file.name,rows:data.rows.length,importedAt:data.at};
+    if(!S.cmed.rates.includes(S.rate)) S.rate=S.cmed.rates.find(r=>r==="17")||S.cmed.rates.find(r=>!/alc/i.test(r))||S.cmed.rates[0];
+    statCMED(); render();
+    if(S.assets&&S.db){
+      say("Salvando a tabela para os próximos acessos…");
+      const old=S.cmedDocAsset;
+      const up=await S.assets.upload(new Blob([JSON.stringify(data)],{type:"application/json"}));
+      S.cmedDocAsset=up.id;
+      await S.db.doc("config/cmed").set({assetId:up.id,file:file.name,rows:data.rows.length,importedAt:data.at});
+      if(old&&old!==up.id){try{await S.assets.delete(old);}catch(e){}}
+      statCMED(); const m=msg(); if(m) m.textContent=`Salva: ${file.name} · ${data.rows.length.toLocaleString("pt-BR")} apresentações.`;
+    } else if(S.local){
+      try{await IDB.set("cmed",data);const m=msg();if(m)m.textContent=`Salva neste aparelho: ${file.name} · ${data.rows.length.toLocaleString("pt-BR")} apresentações.`;}
+      catch(e){const m=msg();if(m)m.textContent="Tabela carregada, mas não foi possível salvar no aparelho.";}
+    }
+  }catch(e){ say(e&&e.message?e.message:"Não foi possível ler o arquivo."); }
+}
+function statCMED(){const m=S.cmedMeta;setStat(m?`CMED: ${m.rows.toLocaleString("pt-BR")} apresentações · ${new Date(m.importedAt).toLocaleDateString("pt-BR")}`:"Tabela CMED não carregada");}
+async function loadSaved(meta){
+  if(!meta||!meta.assetId||meta.assetId===S.cmedDocAsset&&S.cmed) return;
+  S.cmedDocAsset=meta.assetId; S.cmedLoading=true; setStat("Carregando tabela CMED…"); render();
+  try{
+    const r=await fetch("/_blob/"+meta.assetId); if(!r.ok) throw 0;
+    const d=await r.json(); S.cmed=indexCMED(d); S.cmedMeta={file:meta.file,rows:meta.rows,importedAt:meta.importedAt};
+    if(!S.cmed.rates.includes(S.rate)) S.rate=S.cmed.rates.find(x=>x==="17")||S.cmed.rates[0];
+  }catch(e){ setStat("Não foi possível carregar a tabela salva"); }
+  S.cmedLoading=false; statCMED(); render();
+}
+
+/* ---------- roteamento ---------- */
+let cur=null;
+function route(){
+  let name=location.hash.slice(1)||"consulta"; if(!views[name]) name="consulta"; cur=name;
+  for(const a of $("tabs").querySelectorAll("a")){ if(a.getAttribute("href")==="#"+name) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); }
+  const root=$("root"); root.replaceChildren(); views[name].mount(root);
+}
+function render(){
+  if(cur==="consulta"){views.consulta.list();views.consulta.detail();}
+  else if(cur==="precos") views.precos.update();
+}
+window.addEventListener("hashchange",route);
+route();
+
+(async()=>{
+  if(!window.claude||!window.claude.use){
+    S.local=true;
+    try{const d=await IDB.get("cmed");if(d&&d.rows){S.cmed=indexCMED(d);S.cmedMeta={file:d.file,rows:d.rows.length,importedAt:d.at};if(!S.cmed.rates.includes(S.rate))S.rate=S.cmed.rates.find(x=>x==="17")||S.cmed.rates[0];statCMED();render();}}catch(e){}
+    if(cur==="precos") views.precos.update();
+    return;
+  }
+  const [db,assets]=await Promise.all([claude.use("db"),claude.use("assets")]);
+  S.db=db; S.assets=assets;
+  if(cur==="precos") views.precos.update();
+  if(!db) return;
+  let t=setTimeout(()=>{if(!S.cmed)setStat("Tabela CMED não carregada");},10000);
+  db.doc("config/cmed").onSnapshot(s=>{if(!s.metadata.fromCache)clearTimeout(t);if(s.exists)loadSaved(s.data());},()=>clearTimeout(t));
+})();
+</script>
+</body>
+</html>

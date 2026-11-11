@@ -1,0 +1,8 @@
+{
+  "appId": "br.com.balcaofarmaceutico.app",
+  "appName": "Balcão Farmacêutico",
+  "webDir": "www",
+  "backgroundColor": "#ECEFEE",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" }
+}
