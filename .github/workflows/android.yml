@@ -11,6 +11,8 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,3 +42,18 @@ jobs:
           gh release create apk-teste balcao-farmaceutico.apk --title "Balcão Farmacêutico (APK de teste)" --notes "APK gerado automaticamente a partir de ${GITHUB_SHA::7}. Abra este link no celular Android para baixar e instalar." --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Gerar AAB assinado para a Google Play
+        if: github.ref == 'refs/heads/main' && env.KS_PW != ''
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in android/keystore/balcao-upload.jks.enc -out "$RUNNER_TEMP/upload.jks" -pass env:KS_PW
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks"
+          export ANDROID_KEYSTORE_PASSWORD="$KS_PW"
+          cd android && ./gradlew bundleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab ../balcao-farmaceutico.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - name: Guardar o AAB
+        if: github.ref == 'refs/heads/main' && env.KS_PW != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: balcao-farmaceutico-aab-google-play
+          path: balcao-farmaceutico.aab

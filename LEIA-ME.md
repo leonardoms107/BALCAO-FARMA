@@ -65,3 +65,10 @@ Edite `www/index.html` (ou gere de novo a partir da fonte) e rode `npx cap sync`
 ## Aviso
 
 Conteúdo de apoio à dispensação, resumido de bulas e normas sanitárias. Confirme doses e condutas na bula vigente e na prescrição. Normas consideradas: Portaria SVS/MS 344/1998 e atualizações (inclusive RDC 999/2025), RDC 471/2021, RDC 973/2025, IN 360/2025, RDC 873/2024 (SNCR) e Lei 13.732/2018.
+
+## Publicar na Google Play
+
+1. A chave de upload fica criptografada em `android/keystore/`. Cadastre a senha em **Settings › Secrets and variables › Actions › New repository secret** com o nome `ANDROID_KEYSTORE_PASSWORD`.
+2. A partir daí, cada envio ao `main` gera também `balcao-farmaceutico-aab-google-play` (o arquivo `.aab` assinado) na página da execução em **Actions**.
+3. Textos, respostas dos formulários e imagens da loja estão em `play-store/`.
+4. Guarde o arquivo `balcao-upload.jks` e a senha fora do GitHub: sem eles não é possível enviar atualizações (a Google permite trocar a chave de upload pelo suporte, mas demora).
