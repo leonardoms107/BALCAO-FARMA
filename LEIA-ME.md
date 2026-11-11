@@ -4,6 +4,11 @@ Aplicativo de consulta para drogarias: 285 princípios ativos com posologia, con
 
 O projeto usa o Capacitor 8: o mesmo app (pasta `www/`) roda dentro dos projetos nativos `android/` e `ios/`.
 
+## Baixar o APK pronto
+
+No celular Android, abra:
+https://github.com/leonardoms107/BALCAO-FARMA/releases/latest/download/balcao-farmaceutico.apk
+
 ## Caminho mais fácil para o Android (sem instalar nada no computador)
 
 1. Crie uma conta gratuita no GitHub e um repositório novo (pode ser privado).
